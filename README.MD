@@ -1,1 +1,2 @@
 Connor
+Izzy Thompson
