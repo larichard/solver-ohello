@@ -11,6 +11,7 @@ findCell :: Board -> Int -> Int -> Cell
 checkWinner :: Board -> Bool
 
 updateBoard :: Cell -> Board -> Board
+updateBoard (ind, status) (cellLists, turn) = undefined
 
 fancyShow :: Board -> String
 
@@ -19,3 +20,4 @@ validMoves :: Board -> [Cell]
 parseString :: String -> Maybe Cell
 
 countPieces :: Player -> Board -> Int
+countPieces Black (cellLists, turn) = undefined
