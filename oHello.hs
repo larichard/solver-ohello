@@ -1,7 +1,7 @@
 
 
 data Player = Black | White
-data Status = full Player | Empty
+data Status = Player | Empty
 type Location = (Int, Int)
 type Cell = (Location, Status) --possible wrong syntax
 type Board = ([Cell], Player)
