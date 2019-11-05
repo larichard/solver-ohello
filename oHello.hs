@@ -1,8 +1,10 @@
+import Data.Char
+
 data Player = Black | White deriving (Show, Eq) 
 data Status = Full Player | Empty deriving (Show, Eq)
-type Location = (Integer, Integer)
+type Location = (Int, Int) 
 type Cell = (Location, Status) --possible wrong syntax
-type Board = ([Cell], Player)
+type Board = [Cell]
 type Game = (Board, Player)
 --makeBoard :: Player -> Board
 
@@ -20,7 +22,7 @@ findCell = undefined
 gameOver :: Board -> Bool
 gameOver board = 
     --undefined
-    if length (fst board) == 64 then True else False
+    if length board == 64 then True else False
 
 
 --if game is over, returns a winner
@@ -35,7 +37,7 @@ checkWinner board =
 winnerIs :: Board -> Maybe Player
 winnerIs board = 
     let 
-        lstOfCells = fst board
+        lstOfCells = board
         lstOfColors = [colors | (loc, colors) <- lstOfCells]
         count = winnerIsAux lstOfColors
         
@@ -63,12 +65,29 @@ validMoves :: Board -> [Cell]
 validMoves = undefined
 
 parseString :: String -> Maybe Cell
-parseString = undefined
+parseString str = 
+    let
+        column = letterToInt $ head str
+        row = digitToInt (head $ tail str)
+        loc = (column, row)
+        
+    in Just (loc, Full White) 
+
+letterToInt :: Char -> Int
+letterToInt 'A' = 0
+letterToInt 'B' = 1
+letterToInt 'C' = 2
+letterToInt 'D' = 3
+letterToInt 'E' = 4
+letterToInt 'F' = 5
+letterToInt 'G' = 6
+letterToInt 'H' = 7
+
+--help
+changePlayer :: Player -> Player
+changePlayer (Black) = White
+changePlayer (White) = Black
 
 countPieces :: Player -> Board -> Int
 countPieces = undefined
 
-
-testBoard = ([((2,2), Full Black), ((1,2), Full Black)], White)
-
-fullBoard = ([((2,2), Full Black), ((1,2), Full Black), ((2,2), Full Black), ((1,2), Full Black),((2,2), Full Black), ((1,2), Full Black),((2,2), Full Black), ((1,2), Full Black),((2,2), Full Black), ((1,2), Full Black),((2,2), Full Black), ((1,2), Full Black),((2,2), Full Black), ((1,2), Full Black),((2,2), Full Black), ((1,2), Full Black),((2,2), Full Black), ((1,2), Full Black),((2,2), Full Black), ((1,2), Full Black),((2,2), Full Black), ((1,2), Full Black),((2,2), Full Black), ((1,2), Full Black),((2,2), Full Black), ((1,2), Full Black),((2,2), Full Black), ((1,2), Full Black),((2,2), Full Black), ((1,2), Full Black),((2,2), Full Black), ((1,2), Full Black),((2,2), Full Black), ((1,2), Full Black),((2,2), Full Black), ((1,2), Full Black),((2,2), Full Black), ((1,2), Full Black),((2,2), Full Black), ((1,2), Full Black),((2,2), Full Black), ((1,2), Full Black),((2,2), Full Black), ((1,2), Full Black),((2,2), Full Black), ((1,2), Full Black),((2,2), Full Black), ((1,2), Full Black),((2,2), Full Black), ((1,2), Full Black),((2,2), Full Black), ((1,2), Full Black),((2,2), Full Black), ((1,2), Full Black),((2,2), Full Black), ((1,2), Full Black),((2,2), Full Black), ((1,2), Full Black),((2,2), Full Black), ((1,2), Full Black),((2,2), Full Black), ((1,2), Full Black),((2,2), Full Black), ((1,2), Full Black)], White)
