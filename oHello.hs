@@ -6,9 +6,24 @@ type Location = (Int, Int)
 type Cell = (Location, Status) --possible wrong syntax
 type Board = [Cell]
 type Game = (Board, Player)
+type Move = (Location, Full Player)
 
+numRC = [0..7]
+
+allLocs = [(x,y) | x <- numRC, y <- numRC]
 
 allDirections = [(1,0),(1,1),(1,-1),(0,1),(0,-1),(-1,0),(-1,1),(-1,-1)]
+
+instance Show Status where
+   show (Full White) = " | W | "
+   show (Full Black) = " | B | "
+   show (Empty) = " |   | "
+
+
+initialBoard = [ if loc == (3,3) || loc == (4,4) then (loc,Full White)
+                      else if loc == (3,4) || loc == (4,3) then (loc, Full Black)
+                      else (loc, Empty)| loc <- allLocs]
+
 
 findCell :: Board -> (Int, Int) -> Cell
 findCell cells (x,y) = head [((a,b), status) | ((a,b), status) <- cells, (a == x) && (b == y)]
@@ -85,7 +100,7 @@ flipper :: Cell -> Board -> Board
 flipper ((x, y), stat) cellList = undefined
 
 fancyShow :: Board -> String
-fancyShow = undefined
+fancyShow = concat [ show(status) | (loc,status)<-board ]
 
 validMoves :: Board -> [Cell]
 validMoves = undefined
