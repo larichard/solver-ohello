@@ -1,12 +1,13 @@
 import Data.Char
 
-data Player = Black | White deriving (Show, Eq) 
+data Player = Black | White deriving (Show, Eq)
 data Status = Full Player | Empty deriving (Show, Eq)
-type Location = (Int, Int) 
+type Location = (Int, Int)
 type Cell = (Location, Status) --possible wrong syntax
 type Board = [Cell]
 type Game = (Board, Player)
 type Move = (Location, Full Player)
+type Direction = (Int, Int)
 
 numRC = [0..7]
 
@@ -29,10 +30,10 @@ findCell :: Board -> (Int, Int) -> Cell
 findCell cells (x,y) = head [((a,b), status) | ((a,b), status) <- cells, (a == x) && (b == y)]
 
 
-
-getAdjacentCells :: Board -> Cell -> [Cell]
+--returns list of adjacent cells, each tupled with the direction it is adjacent in
+getAdjacentCells :: Board -> Cell -> [(Cell, Direction)]
 getAdjacentCells cells ((x,y), status) = let validDirections = [(a,b) | (a,b) <- allDirections, a+x < 8, b+y <8]
-                                                 in []
+                                         in [((a+x,b+y), (a,b)) | (a,b) <- validDirections]
 
 otherPlayer :: Player -> Player
 otherPlayer Player White = Player Black
@@ -53,7 +54,7 @@ findCell = undefined
 --game is over when both players cannot make a move, or board is full
 --true means game is over
 gameOver :: Board -> Bool
-gameOver board = 
+gameOver board =
     --undefined
     if length board == 64 then True else False
 
@@ -61,29 +62,29 @@ gameOver board =
 --if game is over, returns a winner
 --else return nothing
 checkWinner :: Board -> Maybe Player
-checkWinner board = 
+checkWinner board =
     let gameStatus = gameOver board
     in if gameStatus == True then winnerIs board else Nothing
 
 --helper function that calculates winner
 --winner is player with most pieces on board
 winnerIs :: Board -> Maybe Player
-winnerIs board = 
-    let 
+winnerIs board =
+    let
         lstOfCells = board
         lstOfColors = [colors | (loc, colors) <- lstOfCells]
         count = winnerIsAux lstOfColors
-        
+
     in if count == 0 then Nothing else blackOrWhite count
-    
+
     where
-        blackOrWhite count = 
+        blackOrWhite count =
             if count > 0 then Just Black
             else Just White
 
         --black += 1, white -= 1
         winnerIsAux [] = 0
-        winnerIsAux (x:xs) = 
+        winnerIsAux (x:xs) =
             let recur = winnerIsAux xs
             in if x == Full Black then 1 + recur else (-1) + recur
 
@@ -107,13 +108,13 @@ validMoves = undefined
 
 
 parseString :: String -> Maybe Cell
-parseString str = 
+parseString str =
     let
         column = letterToInt $ head str
         row = digitToInt (head $ tail str)
         loc = (column, row)
-        
-    in Just (loc, Full White) 
+
+    in Just (loc, Full White)
 
 letterToInt :: Char -> Int
 letterToInt 'A' = 0
@@ -133,7 +134,7 @@ changePlayer (White) = Black
 {-
 countPieces :: Player -> Board -> Int
 --countPieces counts the number of pieces on the board belonging to a given player.
---It does this by filtering the list of cells in the Board down to only those that 
+--It does this by filtering the list of cells in the Board down to only those that
 --we would like to count, then taking the length of that list.
 countPieces player cellList = length $ filter (\(location, status) -> status == Full player) cellList
 -}
