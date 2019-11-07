@@ -1,12 +1,12 @@
 import Data.Char
 
 data Player = Black | White deriving (Show, Eq)
-data Status = Full Player | Empty deriving (Show, Eq)
+data Status = Full Player | Empty deriving Eq
 type Location = (Int, Int)
-type Cell = (Location, Status) --possible wrong syntax
+type Cell = (Location, Player) --possible wrong syntax
 type Board = [Cell]
 type Game = (Board, Player)
-type Move = (Location, Full Player)
+type Move = (Location, Player)
 type Direction = (Int, Int)
 
 numRC = [0..7]
@@ -26,28 +26,34 @@ initialBoard = [ if loc == (3,3) || loc == (4,4) then (loc,Full White)
                       else (loc, Empty)| loc <- allLocs]
 
 
-findCell :: Board -> (Int, Int) -> Cell
-findCell cells (x,y) = head [((a,b), status) | ((a,b), status) <- cells, (a == x) && (b == y)]
+--a "nothing" means the cell doesn't exist
+findCell :: Board -> (Int, Int) -> Maybe Cell
+findCell cells (x,y) = let poss = [((a,b), status) | ((a,b), status) <- cells, (a == x) && (b == y)]
+                       in if null poss then Nothing else Just $ head poss
 
 
---returns list of adjacent cells, each tupled with the direction it is adjacent in
+--returns list of adjacent cells, each tupled with the direction it is adjacent in. if there are no adjacent cells it returns an empty list.
+--empty cells are represented by a Nothing tupled with the direction they are in.
+
 getAdjacentCells :: Board -> Cell -> [(Cell, Direction)]
 getAdjacentCells cells ((x,y), status) = let validDirections = [(a,b) | (a,b) <- allDirections, a+x < 8, b+y <8]
-                                         in [((a+x,b+y), (a,b)) | (a,b) <- validDirections]
+                                         in [((findCell cells (a+x,b+y)), (a,b)) | (a,b) <- validDirections]
 
-otherPlayer :: Player -> Player
-otherPlayer Player White = Player Black
-otherPlayer Player Black = Player White
+--returns next cell in a given direction, or nothing if the board ends
+getNext :: Board -> Cell -> Direction -> Maybe Cell
+getNext board ((x,y), status) (a,b) = findCell board (x+a, y+b)
 
-makeMove :: Game -> Cell -> Maybe Board
-makeMove board (loc, Player x) = Nothing
-makeMove board ((x,y), Empty) =
+-- otherPlayer :: Player -> Player
+-- otherPlayer Full Player White = Full Player Black
+-- otherPlayer Full Player Black = Full Player White
+-- --
+-- makeMove :: Game -> Cell -> Maybe Board
+-- makeMove board (loc, Player x) = Nothing
+-- makeMove board ((x,y), Empty) = undefined
 
 checkValid :: Board -> Cell -> Bool
 checkValid = undefined
 
-findCell :: Board -> Int -> Int -> Cell
-findCell = undefined
 
 
 --checks if game is over
@@ -100,8 +106,8 @@ updateBoard ((x, y), stat) cellList = if (length checkExists) /= (length cellLis
 flipper :: Cell -> Board -> Board
 flipper ((x, y), stat) cellList = undefined
 
-fancyShow :: Board -> String
-fancyShow = concat [ show(status) | (loc,status)<-board ]
+-- fancyShow :: Board -> String
+-- fancyShow = concat [ show(status) | (loc,status)<-board ]
 
 validMoves :: Board -> [Cell]
 validMoves = undefined
