@@ -37,14 +37,32 @@ findCell cells (x,y) = let poss = [((a,b), status) | ((a,b), status) <- cells, (
 --returns list of adjacent cells, each tupled with the direction it is adjacent in. if there are no adjacent cells it returns an empty list.
 --empty cells are represented by a Nothing tupled with the direction they are in.
 
-getAdjacentCells :: Board -> Cell -> [(Cell, Direction)]
+getAdjacentCells :: Board -> Cell -> [(Maybe Cell, Direction)]
 getAdjacentCells cells ((x,y), status) = let validDirections = [(a,b) | (a,b) <- allDirections, a+x < 8, b+y <8]
                                          in [((findCell cells (a+x,b+y)), (a,b)) | (a,b) <- validDirections]
 
 
+--returns a row of cells of the non-turn color which ends in a cell of the turn color,
+--not including the cell of the turn color. returns Nothing if the row does not
+--end in a cell of the turn color (ie the board ends first, or it runs into empty cell first)
+getRow :: Game -> Cell -> Direction -> Maybe [Cell]
+getRow (board, turn) cell dir = let possNext = getNext board cell dir
+                                    aux = getRowAux (board, turn) possNext dir
+                                in if any isNothing aux then Nothing else Just (map fromJust aux)
+
+
+getRowAux :: Game -> Maybe Cell -> Direction -> [Maybe Cell]
+getRowAux board Nothing (a,b) =[ Nothing] --ran into an empty cell
+getRowAux (board, turn) (Just (loc,player))) dir= if player == turn then [] --row ends in cell of the turn color
+                                                  else if overruns board (loc,player) dir then [Nothing] -- the board ends
+                                                  else ((Just (loc,player)):(getRowAux (board,turn) (getNext board (loc,player) dir) (a,b)))
+
 --returns next cell in a given direction, or nothing if the board ends
 getNext :: Board -> Cell -> Direction -> Maybe Cell
-getNext board ((x,y), status) (a,b) = findCell board (x+a, y+b)
+getNext board ((x,y), player) (a,b) = findCell board (x+a, y+b)
+
+overruns :: Board -> Cell -> Direction -> Bool
+overruns board ((x,y), player) (a,b) = (x+a) > 7 || (y+b) > 7
 
 otherPlayer :: Player -> Player
 otherPlayer White = Black
