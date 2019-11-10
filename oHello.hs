@@ -2,7 +2,7 @@ import Data.Char
 import Data.List
 import Data.Maybe
 
-data Player = Black | White deriving (Show, Eq) 
+data Player = Black | White deriving (Show, Eq)
 
 type Location = (Int, Int)
 type Cell = (Location, Player) --possible wrong syntax
@@ -28,8 +28,8 @@ showPlayer White = "| W |"
 
 initialBoard = [ ((3,3),White) , ((4,4),White), ((3,4),Black), ((4,3),Black) ]
 
-printRow :: Board -> Integer -> String
-printRow board no = 
+printRow :: Board -> Int -> String
+printRow board no =
              let locs = [ (x,y) | ((x,y),player) <- board]
              in concat [ if (a,b) `elem` locs then showPiece (findCell board (a,b))
                   else showPiece Nothing | (a,b) <- allLocs, a==no]
@@ -38,7 +38,7 @@ fancyShow :: Board -> String
 fancyShow board=  unlines [printRow board num | num <- numRC]
 
 putBoard :: Board -> IO()
-putBoard board = putStr $ fancyShow board   
+putBoard board = putStr $ fancyShow board
 --a "nothing" means the cell doesn't exist
 
 findCell :: Board -> (Int, Int) -> Maybe Cell
@@ -65,7 +65,7 @@ getRow (board, turn) cell dir = let possNext = getNext board cell dir
 
 getRowAux :: Game -> Maybe Cell -> Direction -> [Maybe Cell]
 getRowAux board Nothing (a,b) =[ Nothing] --ran into an empty cell
-getRowAux (board, turn) (Just (loc,player))) dir= if player == turn then [] --row ends in cell of the turn color
+getRowAux (board, turn) (Just (loc,player)) dir= if player == turn then [] --row ends in cell of the turn color
                                                   else if overruns board (loc,player) dir then [Nothing] -- the board ends
                                                   else ((Just (loc,player)):(getRowAux (board,turn) (getNext board (loc,player) dir) loc))
 
@@ -87,7 +87,7 @@ checkValid = undefined
 --game is over when both players cannot make a move, or board is full
 --true means game is over
 gameOver :: Board -> Bool
-gameOver board = 
+gameOver board =
     --undefined
     --option 1: check valid moves available for each player using makeMove or validMoves
     --if only nothings then true else false
@@ -96,7 +96,7 @@ gameOver board =
 
 gameOverAux :: [Maybe Board] -> Bool
 gameOverAux [] = True
-gameOverAux (x:xs) = 
+gameOverAux (x:xs) =
     let recur = gameOverAux xs
     in if x /= Nothing then recur else False
 
@@ -104,7 +104,7 @@ gameOverAux (x:xs) =
 --if game is over, returns a winner
 --else return nothing
 checkWinner :: Board -> Maybe Player
-checkWinner board = 
+checkWinner board =
     let gameStatus = gameOver board
     in if gameStatus then winnerIs board else Nothing
 
@@ -112,22 +112,22 @@ checkWinner board =
 --winner is player with most pieces on board
 --board = [(location, player)]
 winnerIs :: Board -> Maybe Player
-winnerIs board = 
-    let 
+winnerIs board =
+    let
         lstOfCells = board
         lstOfColors = [colors | (loc, colors) <- lstOfCells]
         count = winnerIsAux lstOfColors
     in if count == 0 then Nothing else blackOrWhite count
-    
+
     where
-        blackOrWhite count = 
+        blackOrWhite count =
             if count > 0 then Just Black
             else Just White
 
         --black += 1, white -= 1
         winnerIsAux :: [Player] -> Int
         winnerIsAux [] = 0
-        winnerIsAux (x:xs) = 
+        winnerIsAux (x:xs) =
             let recur = winnerIsAux xs
             in if x == Black then 1 + recur else (-1) + recur
 
@@ -135,13 +135,13 @@ changeCell :: Maybe Cell -> Board -> Board
 --overwrites a single cell on the board.
 --VERY DANGEROUS DO NOT CALL WITH POSSIBLY INCORRECT CELLS
 changeCell Nothing cellList = cellList
-changeCell Just ((x, y), stat) cellList = ((x, y), stat) : [((xi, yi), stati) | ((xi, yi), stati) <- cellList, (xi, yi) /= (x, y)]
+changeCell (Just ((x, y), stat)) cellList = ((x, y), stat) : [((xi, yi), stati) | ((xi, yi), stati) <- cellList, (xi, yi) /= (x, y)]
 
 
 updateBoard :: Cell -> Board -> Maybe Board
-updateBoard ((x, y), stat) board = 
+updateBoard ((x, y), stat) board =
     let
-        adjs = getAdjacentCells ((x, y), stat) board
+        adjs = getAdjacentCells board ((x, y), stat)
         rowsToBeFlipped = getRow (board, stat) adjs --[Maybe [Cell]]
 
         newBoard = recurRowBoardChange rowsToBeFlipped board
@@ -152,8 +152,8 @@ updateBoard ((x, y), stat) board =
 --for a single list of cells
 recurBoardChange :: Maybe [Cell] -> Board -> Board
 recurBoardChange Just [] board = board
-recurBoardChange Just (cell:s) board = recurBoardChange s (changeCell newCell board)
-                               where 
+recurBoardChange (Just (cell:s)) board = recurBoardChange s (changeCell newCell board)
+                               where
                                 newCell = (fst cell, changePlayer $ snd cell)
 recurBoardChange Nothing board = board
 
@@ -169,14 +169,13 @@ recurRowBoardChange (r:ows) board = recurRowBoardChange ows (recurBoardChange r 
 --         adjs = getAdjacentCells cellList startCell
 --         targetCells = flatten [sequence $ flipRow dCell (dx, dy) | (dCell, (dx, dy)) <- adjs]
 --                                           --switch to new FlipRow function @ 5
-type Dir = (Int, Int)
-addDir :: Location -> Dir -> Location
+
 
 
 --if for both players then only useful to check when game is over
 --call updateBoard on each cell
 validMovesAll :: Board -> [Maybe Board]
-validMovesAll board = 
+validMovesAll board =
     --undefined
     let allCells = fillEmpty board
     in [validMovesAllAux x board | x <- allCells]
@@ -194,29 +193,29 @@ lstOfNothings = [Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, 
                 [Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing] ++
                 [Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing] ++
                 [Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing]
-                
+
 --list of Nothings and cells
 fillEmpty :: Board -> [Maybe Cell]
-fillEmpty board = 
+fillEmpty board =
     fillEmptyAux board lstOfNothings
 
 fillEmptyAux :: Board -> [Maybe Cell] -> [Maybe Cell]
 fillEmptyAux [] lst = lst
-fillEmptyAux (x:xs) lst = 
+fillEmptyAux (x:xs) lst =
     let removeHead = tail lst ++ [Just x]
     in fillEmptyAux xs removeHead
 
 
---ex input "A1" 
+--ex input "A1"
 --from A-H, 1-7
 parseString :: String -> Maybe Move
-parseString str = 
+parseString str =
     let
         column = letterToInt $ head str
         row = digitToInt (head $ tail str)
         loc = (column, row)
-        
-    in Just (loc, White) 
+
+    in Just (loc, White)
 
 letterToInt :: Char -> Int
 letterToInt 'A' = 0
@@ -236,15 +235,15 @@ changePlayer (White) = Black
 
 countPieces :: Player -> Board -> Int
 --countPieces counts the number of pieces on the board belonging to a given player.
---It does this by filtering the list of cells in the Board down to only those that 
+--It does this by filtering the list of cells in the Board down to only those that
 --we would like to count, then taking the length of that list.
-countPieces player cellList = length $ filter (\(location, status) -> status == Full player) cellList
+countPieces player cellList = length $ filter (\(location, status) -> status == player) cellList
 
 
 
 
 testBoard = [((0::Int,0::Int), Black), ((0::Int,1::Int), Black)]
-testBoardFull = testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ 
-                testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ 
-                testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ 
-                testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard 
+testBoardFull = testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++
+                testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++
+                testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++
+                testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard
