@@ -1,12 +1,14 @@
 import Data.Char
+import Data.List
+import Data.Maybe
 
 data Player = Black | White deriving (Show, Eq) 
-data Status = Full Player | Empty deriving (Eq)
-type Location = (Int, Int) 
+type Location = (Int, Int)
 type Cell = (Location, Player) --possible wrong syntax
-type Board = [(Location, Player)]
+type Board = [Cell]
 type Game = (Board, Player)
 type Move = (Location, Player)
+
 
 numRC = [0..7]
 
@@ -14,23 +16,34 @@ allLocs = [(x,y) | x <- numRC, y <- numRC]
 
 allDirections = [(1,0),(1,1),(1,-1),(0,1),(0,-1),(-1,0),(-1,1),(-1,-1)]
 
-instance Show Status where
-   show (Full White) = " | W | "
-   show (Full Black) = " | B | "
-   show (Empty) = " |   | "
+showPiece :: Maybe Cell -> String
+showPiece (Just (loc, player)) = showPlayer player
+showPiece Nothing = "|   |"
 
+showPlayer :: Player -> String
+showPlayer Black = "| B |"
+showPlayer White = "| W |"
 
-initialBoard = [ if loc == (3,3) || loc == (4,4) then (loc,Full White)
-                      else if loc == (3,4) || loc == (4,3) then (loc, Full Black)
-                      else (loc, Empty)| loc <- allLocs]
+initialBoard = [ ((3,3),White) , ((4,4),White), ((3,4),Black), ((4,3),Black) ]
 
+printRow :: Board -> Integer -> String
+printRow board no = 
+             let locs = [ (x,y) | ((x,y),player) <- board]
+             in concat [ if (a,b) `elem` locs then showPiece (findCell board (a,b))
+                  else showPiece Nothing | (a,b) <- allLocs, a==no]
+
+fancyShow :: Board -> String
+fancyShow board=  unlines [printRow board num | num <- numRC]
+
+putBoard :: Board -> IO()
+putBoard board = putStr $ fancyShow board   
 --a "nothing" means the cell doesn't exist
-findCell :: Board -> (Int, Int) -> Maybe Cell
+
+findCell :: Board -> (Integer, Integer) -> Maybe Cell
 findCell cells (x,y) = let poss = [((a,b), status) | ((a,b), status) <- cells, (a == x) && (b == y)]
                        in if null poss then Nothing else Just $ head poss
 
-findCell :: Board -> (Int, Int) -> Cell
-findCell cells (x,y) = head [((a,b), status) | ((a,b), status) <- cells, (a == x) && (b == y)]
+
 --returns list of adjacent cells, each tupled with the direction it is adjacent in. if there are no adjacent cells it returns an empty list.
 --empty cells are represented by a Nothing tupled with the direction they are in.
 getAdjacentCells :: Board -> Cell -> [(Maybe Cell, Direction)]
@@ -132,10 +145,6 @@ updateBoard ((x, y), stat) cellList =
 flipper :: Cell -> Board -> Board
 flipper ((x, y), stat) cellList = undefined
 
-{-
-fancyShow :: Board -> String
-fancyShow = concat [ show(status) | (loc,status)<-board ]
--}
 
 --if for both players then only useful to check when game is over
 --call updateBoard on each cell
@@ -197,13 +206,14 @@ changePlayer :: Player -> Player
 changePlayer (Black) = White
 changePlayer (White) = Black
 
-{-
+
 countPieces :: Player -> Board -> Int
 --countPieces counts the number of pieces on the board belonging to a given player.
 --It does this by filtering the list of cells in the Board down to only those that 
 --we would like to count, then taking the length of that list.
 countPieces player cellList = length $ filter (\(location, status) -> status == Full player) cellList
--}
+
+
 
 testBoard = [((0::Int,0::Int), Black), ((0::Int,1::Int), Black)]
 testBoardFull = testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ 
@@ -211,3 +221,4 @@ testBoardFull = testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++
                 testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ 
                 testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard 
                 
+
