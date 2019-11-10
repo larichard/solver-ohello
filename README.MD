@@ -1,4 +1,4 @@
-Izzy Thompson
+<p style = "font-style: monospace">Izzy Thompson</p>
 
 Richard La
 
