@@ -9,6 +9,7 @@ type Cell = (Location, Player) --possible wrong syntax
 type Board = [Cell]
 type Game = (Board, Player)
 type Move = (Location, Player)
+type Direction = (Int, Int)
 
 
 numRC = [0..7]
