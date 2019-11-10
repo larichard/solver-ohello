@@ -3,6 +3,7 @@ import Data.List
 import Data.Maybe
 
 data Player = Black | White deriving (Show, Eq) 
+
 type Location = (Int, Int)
 type Cell = (Location, Player) --possible wrong syntax
 type Board = [Cell]
@@ -44,10 +45,10 @@ findCell cells (x,y) = let poss = [((a,b), status) | ((a,b), status) <- cells, (
                        in if null poss then Nothing else Just $ head poss
 
 
+
 --returns list of adjacent cells, each tupled with the direction it is adjacent in. if there are no adjacent cells it returns an empty list.
 --empty cells are represented by a Nothing tupled with the direction they are in.
 getAdjacentCells :: Board -> Cell -> [(Maybe Cell, Direction)]
-getAdjacentCells :: Board -> Cell -> [Cell]
 getAdjacentCells cells ((x,y), status) = let validDirections = [(a,b) | (a,b) <- allDirections, a+x < 8, b+y <8]
                                          in [((findCell cells (a+x,b+y)), (a,b)) | (a,b) <- validDirections]
 
@@ -77,7 +78,6 @@ overruns board ((x,y), player) (a,b) = (x+a) > 7 || (y+b) > 7
 otherPlayer :: Player -> Player
 otherPlayer White = Black
 otherPlayer Black = White
-
 
 checkValid :: Board -> Cell -> Bool
 checkValid = undefined
@@ -130,20 +130,46 @@ winnerIs board =
             let recur = winnerIsAux xs
             in if x == Black then 1 + recur else (-1) + recur
 
+changeCell :: Maybe Cell -> Board -> Board
+--overwrites a single cell on the board.
+--VERY DANGEROUS DO NOT CALL WITH POSSIBLY INCORRECT CELLS
+changeCell Nothing cellList = cellList
+changeCell Just ((x, y), stat) cellList = ((x, y), stat) : [((xi, yi), stati) | ((xi, yi), stati) <- cellList, (xi, yi) /= (x, y)]
 
-updateBoard :: (Location, Player) -> Board -> Maybe Board
-updateBoard ((x, y), stat) cellList = 
-    undefined
-    {-
-                                        if (length checkExists) /= (length cellList)
-                                      then flipper ((x,y), stat) (((x,y), stat) : cellList)
-                                      else flipper ((x,y), stat) cellList
-    where
-        checkExists = filter (\((i, j), stati) -> (i /= x) && (j /= y)) cellList
-    -}
 
-flipper :: Cell -> Board -> Board
-flipper ((x, y), stat) cellList = undefined
+updateBoard :: Cell -> Board -> Maybe Board
+updateBoard ((x, y), stat) board = 
+    let
+        adjs = getAdjacentCells ((x, y), stat) board
+        rowsToBeFlipped = getRow (board, stat) adjs --[Maybe [Cell]]
+
+        newBoard = recurRowBoardChange rowsToBeFlipped board
+    in newBoard
+
+
+--recurBoardChange gets called by recurRowBoardChange, it's just a pattern-matching recursive function that modifies the board
+--for a single list of cells
+recurBoardChange :: Maybe [Cell] -> Board -> Board
+recurBoardChange Just [] board = board
+recurBoardChange Just (cell:s) board = recurBoardChange s (changeCell newCell board)
+                               where 
+                                newCell = (fst cell, changePlayer $ snd cell)
+recurBoardChange Nothing board = board
+
+--recurRowBoardChange is called by updateBoard and calls recurBoardChange. This acts as the first layer of some
+--two layer recursion.
+recurRowBoardChange :: [Maybe [Cell]] -> Board -> Board
+recurRowBoardChange [] board = board
+recurRowBoardChange (r:ows) board = recurRowBoardChange ows (recurBoardChange r board)
+
+-- flipper :: Cell -> Board -> Board
+-- flipper startCell cellList = recurBoardChange targetCells cellList
+--     where
+--         adjs = getAdjacentCells cellList startCell
+--         targetCells = flatten [sequence $ flipRow dCell (dx, dy) | (dCell, (dx, dy)) <- adjs]
+--                                           --switch to new FlipRow function @ 5
+type Dir = (Int, Int)
+addDir :: Location -> Dir -> Location
 
 
 --if for both players then only useful to check when game is over
@@ -158,7 +184,7 @@ validMovesAllAux :: Maybe Cell -> Board -> Maybe Board
 validMovesAllAux Nothing board = Nothing
 validMovesAllAux (Just x) board = updateBoard x board
 
-
+--
 lstOfNothings = [Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing] ++
                 [Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing] ++
                 [Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing] ++
@@ -215,10 +241,9 @@ countPieces player cellList = length $ filter (\(location, status) -> status == 
 
 
 
+
 testBoard = [((0::Int,0::Int), Black), ((0::Int,1::Int), Black)]
 testBoardFull = testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ 
                 testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ 
                 testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ 
                 testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard 
-                
-
