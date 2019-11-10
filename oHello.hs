@@ -1,12 +1,14 @@
 import Data.Char
-
+import Data.List
+import Data.Maybe
 data Player = Black | White deriving (Show, Eq) 
-data Status = Full Player | Empty deriving (Eq)
-type Location = (Int, Int) 
-type Cell = (Location, Status) --possible wrong syntax
+--data Status = Full Player | Empty deriving (Eq)
+type Location = (Integer, Integer) 
+type Cell = (Location, Player) --possible wrong syntax
 type Board = [Cell]
 type Game = (Board, Player)
 type Move = (Location, Player)
+
 
 numRC = [0..7]
 
@@ -14,17 +16,35 @@ allLocs = [(x,y) | x <- numRC, y <- numRC]
 
 allDirections = [(1,0),(1,1),(1,-1),(0,1),(0,-1),(-1,0),(-1,1),(-1,-1)]
 
-instance Show Status where
-   show (Full White) = " | W | "
-   show (Full Black) = " | B | "
-   show (Empty) = " |   | "
+showPiece :: Maybe Cell -> String
+showPiece (Just (loc, player)) = showPlayer player
+showPiece Nothing = "|   |"
+
+showPlayer :: Player -> String
+showPlayer Black = "| B |"
+showPlayer White = "| W |"
+
+initialBoard = [ ((3,3),White) , ((4,4),White), ((3,4),Black), ((4,3),Black) ]
+
+printRow :: Board -> Integer -> String
+printRow board no = 
+             let locs = [ (x,y) | ((x,y),player) <- board]
+             in concat [ if (a,b) `elem` locs then showPiece (findCell board (a,b))
+                  else showPiece Nothing | (a,b) <- allLocs, a==no]
+
+fancyShow :: Board -> String
+fancyShow board=  unlines [printRow board num | num <- numRC]
+
+putBoard :: Board -> IO()
+putBoard board = putStr $ fancyShow board   
+
+findCell :: Board -> (Integer, Integer) -> Maybe Cell
+findCell cells (x,y) = let poss = [((a,b), status) | ((a,b), status) <- cells, (a == x) && (b == y)]
+                       in if null poss then Nothing else Just $ head poss
 
 
-initialBoard = [ if loc == (3,3) || loc == (4,4) then (loc,Full White)
-                      else if loc == (3,4) || loc == (4,3) then (loc, Full Black)
-                      else (loc, Empty)| loc <- allLocs]
 
-
+{-
 findCell :: Board -> (Int, Int) -> Cell
 findCell cells (x,y) = head [((a,b), status) | ((a,b), status) <- cells, (a == x) && (b == y)]
 
@@ -138,4 +158,4 @@ countPieces :: Player -> Board -> Int
 countPieces player cellList = length $ filter (\(location, status) -> status == Full player) cellList
 -}
 
-testBoard = [((0::Int,0::Int), Full Black), ((0::Int,1::Int), Full Black)]
+testBoard = [((0::Int,0::Int), Full Black), ((0::Int,1::Int), Full Black)]-}
