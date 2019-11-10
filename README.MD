@@ -1,9 +1,10 @@
-Izzy Thompson
+```diff
+- Izzy Thompson
 
-Richard La
+# Richard La
 
-Stephanie Opon
++ Stephanie Opon
 
-Connor Weisenberger
-
+! Connor Weisenberger
+```
 <p><a href = http://www.ffothello.org/livres/beginner-Randy-Fang.pdf>pdf thingy here</a></p>
