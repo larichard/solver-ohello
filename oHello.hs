@@ -40,7 +40,7 @@ putBoard :: Board -> IO()
 putBoard board = putStr $ fancyShow board   
 --a "nothing" means the cell doesn't exist
 
-findCell :: Board -> (Integer, Integer) -> Maybe Cell
+findCell :: Board -> (Int, Int) -> Maybe Cell
 findCell cells (x,y) = let poss = [((a,b), status) | ((a,b), status) <- cells, (a == x) && (b == y)]
                        in if null poss then Nothing else Just $ head poss
 
@@ -66,7 +66,7 @@ getRowAux :: Game -> Maybe Cell -> Direction -> [Maybe Cell]
 getRowAux board Nothing (a,b) =[ Nothing] --ran into an empty cell
 getRowAux (board, turn) (Just (loc,player))) dir= if player == turn then [] --row ends in cell of the turn color
                                                   else if overruns board (loc,player) dir then [Nothing] -- the board ends
-                                                  else ((Just (loc,player)):(getRowAux (board,turn) (getNext board (loc,player) dir) (a,b)))
+                                                  else ((Just (loc,player)):(getRowAux (board,turn) (getNext board (loc,player) dir) loc))
 
 --returns next cell in a given direction, or nothing if the board ends
 getNext :: Board -> Cell -> Direction -> Maybe Cell
