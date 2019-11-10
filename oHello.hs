@@ -1,13 +1,15 @@
 import Data.Char
 
-data Player = Black | White deriving (Show, Eq)
-data Status = Full Player | Empty deriving Eq
-type Location = (Int, Int)
-type Cell = (Location, Player) --possible wrong syntax
+
+data Player = Black | White deriving (Show, Eq) 
+data Status = Full Player | Empty deriving (Eq)
+type Location = (Int, Int) 
+type Cell = (Location, Status) --possible wrong syntax
 type Board = [Cell]
 type Game = (Board, Player)
 type Move = (Location, Player)
 type Direction = (Int, Int)
+
 
 numRC = [0..7]
 
@@ -39,6 +41,7 @@ getAdjacentCells :: Board -> Cell -> [(Maybe Cell, Direction)]
 getAdjacentCells cells ((x,y), status) = let validDirections = [(a,b) | (a,b) <- allDirections, a+x < 8, b+y <8]
                                          in [((findCell cells (a+x,b+y)), (a,b)) | (a,b) <- validDirections]
 
+
 --returns a row of cells of the non-turn color which ends in a cell of the turn color,
 --not including the cell of the turn color. returns Nothing if the row does not
 --end in a cell of the turn color (ie the board ends first, or it runs into empty cell first)
@@ -61,18 +64,18 @@ getNext board ((x,y), player) (a,b) = findCell board (x+a, y+b)
 overruns :: Board -> Cell -> Direction -> Bool
 overruns board ((x,y), player) (a,b) = (x+a) > 7 || (y+b) > 7
 
--- otherPlayer :: Player -> Player
--- otherPlayer Full Player White = Full Player Black
--- otherPlayer Full Player Black = Full Player White
--- --
--- makeMove :: Game -> Cell -> Maybe Board
--- makeMove board (loc, Player x) = Nothing
--- makeMove board ((x,y), Empty) = undefined
+otherPlayer :: Player -> Player
+otherPlayer White = Black
+otherPlayer Black = White
+
+makeMove :: Game -> Cell -> Maybe Board
+makeMove board (loc, Full White) = Nothing
+makeMove board (loc, Full Black) = Nothing
+makeMove board ((x,y), Empty) =
+    undefined
 
 checkValid :: Board -> Cell -> Bool
 checkValid = undefined
-
-
 
 --checks if game is over
 --game is over when both players cannot make a move, or board is full
@@ -80,7 +83,7 @@ checkValid = undefined
 gameOver :: Board -> Bool
 gameOver board =
     --undefined
-    if length board == 64 then True else False
+    if length board == 2 then True else False
 
 
 --if game is over, returns a winner
@@ -88,7 +91,7 @@ gameOver board =
 checkWinner :: Board -> Maybe Player
 checkWinner board =
     let gameStatus = gameOver board
-    in if gameStatus == True then winnerIs board else Nothing
+    in if gameStatus then winnerIs board else Nothing
 
 --helper function that calculates winner
 --winner is player with most pieces on board
@@ -124,21 +127,27 @@ updateBoard ((x, y), stat) cellList = if (length checkExists) /= (length cellLis
 flipper :: Cell -> Board -> Board
 flipper ((x, y), stat) cellList = undefined
 
--- fancyShow :: Board -> String
--- fancyShow = concat [ show(status) | (loc,status)<-board ]
+
+{-
+fancyShow :: Board -> String
+fancyShow = concat [ show(status) | (loc,status)<-board ]
+-}
+
 
 validMoves :: Board -> [Cell]
 validMoves = undefined
 
 
-parseString :: String -> Maybe Cell
-parseString str =
+
+parseString :: String -> Maybe Move
+parseString str = 
+
     let
         column = letterToInt $ head str
         row = digitToInt (head $ tail str)
         loc = (column, row)
 
-    in Just (loc, Full White)
+    in Just (loc, White) 
 
 letterToInt :: Char -> Int
 letterToInt 'A' = 0
@@ -162,3 +171,5 @@ countPieces :: Player -> Board -> Int
 --we would like to count, then taking the length of that list.
 countPieces player cellList = length $ filter (\(location, status) -> status == Full player) cellList
 -}
+
+testBoard = [((0::Int,0::Int), Full Black), ((0::Int,1::Int), Full Black)]
