@@ -131,28 +131,28 @@ winnerIs board =
             let recur = winnerIsAux xs
             in if x == Black then 1 + recur else (-1) + recur
 
-changeCell :: Maybe Cell -> Board -> Board
+changeCell :: Cell -> Board -> Board
 --overwrites a single cell on the board.
 --VERY DANGEROUS DO NOT CALL WITH POSSIBLY INCORRECT CELLS
-changeCell Nothing cellList = cellList
-changeCell (Just ((x, y), stat)) cellList = ((x, y), stat) : [((xi, yi), stati) | ((xi, yi), stati) <- cellList, (xi, yi) /= (x, y)]
+changeCell ((x, y), stat) cellList = ((x, y), stat) : [((xi, yi), stati) | ((xi, yi), stati) <- cellList, (xi, yi) /= (x, y)]
 
-
+--getRow :: Game -> Cell -> Direction -> Maybe [Cell]
+--getAdjacentCells :: Board -> Cell -> [(Maybe Cell, Direction)]
 updateBoard :: Cell -> Board -> Maybe Board
 updateBoard ((x, y), stat) board =
     let
         adjs = getAdjacentCells board ((x, y), stat)
-        rowsToBeFlipped = getRow (board, stat) adjs --[Maybe [Cell]]
-
+        adjsMinusNothings = [(fromJust possibleCell, dir) | (possibleCell, dir) <- adjs, possibleCell /= Nothing]
+        rowsToBeFlipped = [getRow (board, stat) (fst adj) (snd adj) | adj <- adjsMinusNothings] --[Maybe [Cell]]
         newBoard = recurRowBoardChange rowsToBeFlipped board
-    in newBoard
+    in if newBoard == board then Nothing else Just newBoard
 
 
 --recurBoardChange gets called by recurRowBoardChange, it's just a pattern-matching recursive function that modifies the board
---for a single list of cells
+--for a single list of cells, with their colors reversed.
 recurBoardChange :: Maybe [Cell] -> Board -> Board
-recurBoardChange Just [] board = board
-recurBoardChange (Just (cell:s)) board = recurBoardChange s (changeCell newCell board)
+recurBoardChange (Just []) board = board
+recurBoardChange (Just (cell:s)) board = recurBoardChange (Just s) (changeCell newCell board)
                                where
                                 newCell = (fst cell, changePlayer $ snd cell)
 recurBoardChange Nothing board = board
