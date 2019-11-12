@@ -91,14 +91,17 @@ gameOver board =
     --undefined
     --option 1: check valid moves available for each player using makeMove or validMoves
     --if only nothings then true else false
-    let all = validMovesAll board
-    in if gameOverAux all then True else False
+    let --all = validMovesAll board
+        allWhite = [updateBoard (x, White) board | x <- allLocs]
+        allBlack = [updateBoard (x, Black) board | x <- allLocs]
+    in if gameOverAux allBlack && gameOverAux allWhite then True else False
+    --in if gameOverAux all then True else False
 
 gameOverAux :: [Maybe Board] -> Bool
 gameOverAux [] = True
 gameOverAux (x:xs) =
     let recur = gameOverAux xs
-    in if x /= Nothing then recur else False
+    in if x == Nothing then recur else False
 
 
 --if game is over, returns a winner
@@ -171,7 +174,7 @@ recurRowBoardChange (r:ows) board = recurRowBoardChange ows (recurBoardChange r 
 --                                           --switch to new FlipRow function @ 5
 
 
-
+{-
 --if for both players then only useful to check when game is over
 --call updateBoard on each cell
 validMovesAll :: Board -> [Maybe Board]
@@ -226,6 +229,8 @@ letterToInt 'E' = 4
 letterToInt 'F' = 5
 letterToInt 'G' = 6
 letterToInt 'H' = 7
+
+-}
 
 --help
 changePlayer :: Player -> Player
