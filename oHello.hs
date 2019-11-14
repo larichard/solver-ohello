@@ -11,7 +11,7 @@ type Board = [Cell]
 type Game = (Board, Player)
 type Move = (Location, Player)
 type Direction = (Int, Int)
-
+data BST a = Empty | Node a (BST a) (BST a) deriving Show
 
 numRC = [0..7]
 
@@ -55,23 +55,24 @@ getAdjacentCells cells ((x,y), status) = let validDirections = [(a,b) | (a,b) <-
                                          in [((findCell cells (a+x,b+y)), (a,b)) | (a,b) <- validDirections]
 
 
-testBoard = [((0::Int,1::Int), White), ((0::Int,2::Int), White),((0::Int, 3::Int), Black)]
+testBoard = [((0::Int,1::Int), White), ((0::Int,2::Int), White), ((0::Int, 3::Int), White), ((0::Int, 4::Int), Black)]
 --returns a row of cells of the non-turn color which ends in a cell of the turn color,
 --not including the cell of the turn color. returns Nothing if the row does not
 --end in a cell of the turn color (ie the board ends first, or it runs into empty cell first)
-getRow :: Game -> Cell -> Direction -> Maybe [Cell]
+getRow :: Game -> Cell -> Direction -> [Cell]
 getRow (board, turn) ((x,y), player) (a,b) = let loc = (x+a, y+b)
-                                             in getRowAux (board, turn) loc (a,b)
+                                             in fromMaybe [] $ getRowAux (board, turn) loc (a,b)
 
 
 getRowAux :: Game -> Location -> Direction -> Maybe [Cell]
 getRowAux (board, turn) (x,y) (a,b) = let newCell = lookup (x, y) board
-                                          nextCell =  lookup (x+a, y+b) board
                                           restOfRow = getRowAux (board, turn) (x+a,y+b) (a,b)
-                                      in if newCell == (Just turn) then Just []
-                                         else if (newCell == Nothing)  || (restOfRow == Nothing) then Nothing
-                                         else let player = fromJust newCell
-                                              in Just (((x,y),player):(fromJust restOfRow))
+                                      in case newCell of
+                                             Nothing -> Nothing
+                                             Just pl -> if pl == turn
+                                                        then Just [] 
+                                                        else fmap (((x,y),pl):) restOfRow
+
 
 
 
@@ -89,30 +90,30 @@ checkValid = undefined
 --checks if game is over
 --game is over when both players cannot make a move, or board is full
 --true means game is over
-gameOver :: Board -> Bool
-gameOver board =
-    --undefined
-    --option 1: check valid moves available for each player using makeMove or validMoves
-    --if only nothings then true else false
-    let --all = validMovesAll board
-        allWhite = [updateBoard (x, White) board | x <- allLocs]
-        allBlack = [updateBoard (x, Black) board | x <- allLocs]
-    in if gameOverAux allBlack && gameOverAux allWhite then True else False
-    --in if gameOverAux all then True else False
+-- gameOver :: Board -> Bool
+-- gameOver board =
+--     --undefined
+--     --option 1: check valid moves available for each player using makeMove or validMoves
+--     --if only nothings then true else false
+--     let --all = validMovesAll board
+--         allWhite = [updateBoard (x, White) board | x <- allLocs]
+--         allBlack = [updateBoard (x, Black) board | x <- allLocs]
+--     in if gameOverAux allBlack && gameOverAux allWhite then True else False
+--     --in if gameOverAux all then True else False
 
-gameOverAux :: [Maybe Board] -> Bool
-gameOverAux [] = True
-gameOverAux (x:xs) =
-    let recur = gameOverAux xs
-    in if x == Nothing then recur else False
+-- gameOverAux :: [Maybe Board] -> Bool
+-- gameOverAux [] = True
+-- gameOverAux (x:xs) =
+--     let recur = gameOverAux xs
+--     in if x == Nothing then recur else False
 
 
 --if game is over, returns a winner
 --else return nothing
-checkWinner :: Board -> Maybe Player
-checkWinner board =
-    let gameStatus = gameOver board
-    in if gameStatus then winnerIs board else Nothing
+-- checkWinner :: Board -> Maybe Player
+-- checkWinner board =
+--     let gameStatus = gameOver board
+--     in if gameStatus then winnerIs board else Nothing
 
 --helper function that calculates winner
 --winner is player with most pieces on board
@@ -140,80 +141,32 @@ winnerIs board =
 changeCell :: Cell -> Board -> Board
 --overwrites a single cell on the board.
 --VERY DANGEROUS DO NOT CALL WITH POSSIBLY INCORRECT CELLS
-changeCell ((x, y), stat) cellList = ((x, y), stat) : [((xi, yi), stati) | ((xi, yi), stati) <- cellList, (xi, yi) /= (x, y)]
+changeCell (loc, stat) cellList = (loc, stat) : [(loci, stati) | (loci, stati) <- cellList, loci /= loc]
 
 --getRow :: Game -> Cell -> Direction -> Maybe [Cell]
 --getAdjacentCells :: Board -> Cell -> [(Maybe Cell, Direction)]
-updateBoard :: Cell -> Board -> Maybe Board
-updateBoard ((x, y), stat) board =
-    let
-        adjs = getAdjacentCells board ((x, y), stat)
-        adjsMinusNothings = [(fromJust possibleCell, dir) | (possibleCell, dir) <- adjs, possibleCell /= Nothing]
-        rowsToBeFlipped = [getRow (board, stat) ((x + dx, y + dy), stat) (dx, dy)  | ((mCell), (dx, dy)) <- adjsMinusNothings] --[Maybe [Cell]]
-        newBoard = recurRowBoardChange rowsToBeFlipped board
-        isValid :: Cell -> Board -> Bool
-        isValid ((x, y), stat) board = (x < 8) && (y < 8) && (x <= 0) && (y <= 0) && ((findCell board (x, y)) == Nothing)
-    in if newBoard == board then Nothing else if isValid ((x, y), stat) board then Just (((x, y), stat):newBoard) else Nothing
+updateBoard :: Cell -> Game -> Maybe Game
+updateBoard ((x, y), stat) (board, turn) =
+    let cellsToBeFlipped = concat [getRow (board, stat) ((x, y), stat) dir | dir <- allDirections] --[Maybe [Cell]]
+        newBoard = recurBoardChange cellsToBeFlipped board
+        isValid = (x < 8) && (y < 8) && (x <= 0) && (y <= 0) && ((findCell board (x, y)) == Nothing)
+    in if not (null cellsToBeFlipped) && isValid then Just ((((x, y), stat):newBoard), changePlayer stat) else Nothing
 
 
 --recurBoardChange gets called by recurRowBoardChange, it's just a pattern-matching recursive function that modifies the board
 --for a single list of cells, with their colors reversed.
-recurBoardChange :: Maybe [Cell] -> Board -> Board
-recurBoardChange (Just []) board = board
-recurBoardChange (Just (cell:s)) board = recurBoardChange (Just s) (changeCell newCell board)
+recurBoardChange :: [Cell] -> Board -> Board
+recurBoardChange [] board = board
+recurBoardChange (cell:s) board = recurBoardChange (s) (changeCell newCell board)
                                where
                                 newCell = (fst cell, changePlayer $ snd cell)
-recurBoardChange Nothing board = board
 
---recurRowBoardChange is called by updateBoard and calls recurBoardChange. This acts as the first layer of some
---two layer recursion.
-recurRowBoardChange :: [Maybe [Cell]] -> Board -> Board
-recurRowBoardChange [] board = board
-recurRowBoardChange (r:ows) board = recurRowBoardChange ows (recurBoardChange r board)
 
--- flipper :: Cell -> Board -> Board
--- flipper startCell cellList = recurBoardChange targetCells cellList
---     where
---         adjs = getAdjacentCells cellList startCell
---         targetCells = flatten [sequence $ flipRow dCell (dx, dy) | (dCell, (dx, dy)) <- adjs]
---                                           --switch to new FlipRow function @ 5
+--recurRowBoard 11/07/19 - 11/14/19, rip
+
 
 
 {-
---if for both players then only useful to check when game is over
---call updateBoard on each cell
-validMovesAll :: Board -> [Maybe Board]
-validMovesAll board =
-    --undefined
-    let allCells = fillEmpty board
-    in [validMovesAllAux x board | x <- allCells]
-
-validMovesAllAux :: Maybe Cell -> Board -> Maybe Board
-validMovesAllAux Nothing board = Nothing
-validMovesAllAux (Just x) board = updateBoard x board
-
---
-lstOfNothings = [Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing] ++
-                [Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing] ++
-                [Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing] ++
-                [Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing] ++
-                [Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing] ++
-                [Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing] ++
-                [Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing] ++
-                [Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing]
-
---list of Nothings and cells
-fillEmpty :: Board -> [Maybe Cell]
-fillEmpty board =
-    fillEmptyAux board lstOfNothings
-
-fillEmptyAux :: Board -> [Maybe Cell] -> [Maybe Cell]
-fillEmptyAux [] lst = lst
-fillEmptyAux (x:xs) lst =
-    let removeHead = tail lst ++ [Just x]
-    in fillEmptyAux xs removeHead
-
-
 --ex input "A1"
 --from A-H, 1-7
 parseString :: String -> Maybe Move
@@ -250,7 +203,18 @@ countPieces :: Player -> Board -> Int
 countPieces player cellList = length $ filter (\(location, status) -> status == player) cellList
 
 
-testBoardFull = testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++
-                testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++
-                testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++
-                testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard
+
+-- #     # ####### #     #         #     # #######     #####  ####### #       #     # #######     
+-- ##    # #     # #  #  #         #  #  # #          #     # #     # #       #     # #           
+-- # #   # #     # #  #  #         #  #  # #          #       #     # #       #     # #           
+-- #  #  # #     # #  #  #         #  #  # #####       #####  #     # #       #     # #####       
+-- #   # # #     # #  #  #  ###    #  #  # #                # #     # #        #   #  #         
+-- #    ## #     # #  #  #  ###    #  #  # #          #     # #     # #         # #   #        ## 
+-- #     # #######  ## ##    #      ## ##  #######     #####  ####### #######    #    #######  ## 
+--                          #                                                                     
+
+
+
+-- allPossibleBoards :: Game -> [Game]
+-- allPossibleBoards (board, turn) = [updateBoard board (cell, turn) | cell <- validMoves board]
+
