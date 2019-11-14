@@ -26,7 +26,7 @@ showPlayer :: Player -> String
 showPlayer Black = "| B |"
 showPlayer White = "| W |"
 
-initialBoard = [ ((3,3),White) , ((4,4),White), ((3,4),Black), ((4,3),Black) ]
+initialBoard = [ ((3::Int,3::Int),White) , ((4::Int,4::Int),White), ((3::Int,4::Int),Black), ((4::Int,3::Int),Black) ]
 
 printRow :: Board -> Int -> String
 printRow board no =
@@ -148,7 +148,9 @@ updateBoard ((x, y), stat) board =
         adjsMinusNothings = [(fromJust possibleCell, dir) | (possibleCell, dir) <- adjs, possibleCell /= Nothing]
         rowsToBeFlipped = [getRow (board, stat) (fst adj) (snd adj) | adj <- adjsMinusNothings] --[Maybe [Cell]]
         newBoard = recurRowBoardChange rowsToBeFlipped board
-    in if newBoard == board then Nothing else Just newBoard
+        isValid :: Cell -> Board -> Bool
+        isValid ((x, y), stat) board = (x < 8) && (y < 8) && (x <= 0) && (y <= 0) && ((findCell board (x, y)) == Nothing)
+    in if newBoard == board then Nothing else if isValid ((x, y), stat) board then Just (((x, y), stat):newBoard) else Nothing
 
 
 --recurBoardChange gets called by recurRowBoardChange, it's just a pattern-matching recursive function that modifies the board
@@ -247,7 +249,7 @@ countPieces player cellList = length $ filter (\(location, status) -> status == 
 
 
 
-testBoard = [((0::Int,0::Int), Black), ((0::Int,1::Int), Black)]
+testBoard = [((0::Int,0::Int), White), ((0::Int,1::Int), Black)]
 testBoardFull = testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++
                 testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++
                 testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++
