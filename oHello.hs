@@ -149,7 +149,7 @@ updateBoard ((x, y), stat) board =
     let
         adjs = getAdjacentCells board ((x, y), stat)
         adjsMinusNothings = [(fromJust possibleCell, dir) | (possibleCell, dir) <- adjs, possibleCell /= Nothing]
-        rowsToBeFlipped = [getRow (board, stat) (fst adj) (snd adj) | adj <- adjsMinusNothings] --[Maybe [Cell]]
+        rowsToBeFlipped = [getRow (board, stat) ((x + dx, y + dy), stat) (dx, dy)  | ((mCell), (dx, dy)) <- adjsMinusNothings] --[Maybe [Cell]]
         newBoard = recurRowBoardChange rowsToBeFlipped board
         isValid :: Cell -> Board -> Bool
         isValid ((x, y), stat) board = (x < 8) && (y < 8) && (x <= 0) && (y <= 0) && ((findCell board (x, y)) == Nothing)
