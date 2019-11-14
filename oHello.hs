@@ -151,7 +151,9 @@ updateBoard ((x, y), stat) board =
         adjsMinusNothings = [(fromJust possibleCell, dir) | (possibleCell, dir) <- adjs, possibleCell /= Nothing]
         rowsToBeFlipped = [getRow (board, stat) (fst adj) (snd adj) | adj <- adjsMinusNothings] --[Maybe [Cell]]
         newBoard = recurRowBoardChange rowsToBeFlipped board
-    in if newBoard == board then Nothing else Just newBoard
+        isValid :: Cell -> Board -> Bool
+        isValid ((x, y), stat) board = (x < 8) && (y < 8) && (x <= 0) && (y <= 0) && ((findCell board (x, y)) == Nothing)
+    in if newBoard == board then Nothing else if isValid ((x, y), stat) board then Just (((x, y), stat):newBoard) else Nothing
 
 
 --recurBoardChange gets called by recurRowBoardChange, it's just a pattern-matching recursive function that modifies the board
@@ -246,9 +248,6 @@ countPieces :: Player -> Board -> Int
 --It does this by filtering the list of cells in the Board down to only those that
 --we would like to count, then taking the length of that list.
 countPieces player cellList = length $ filter (\(location, status) -> status == player) cellList
-
-
-
 
 
 testBoardFull = testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++
