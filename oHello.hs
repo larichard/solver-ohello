@@ -1,5 +1,6 @@
 import Data.Char
 import Data.List
+import Debug.Trace
 import Data.Maybe
 
 data Player = Black | White deriving (Show, Eq)
@@ -26,7 +27,7 @@ showPlayer :: Player -> String
 showPlayer Black = "| B |"
 showPlayer White = "| W |"
 
-initialBoard = [ ((3,3),White) , ((4,4),White), ((3,4),Black), ((4,3),Black) ]
+initialBoard = [ ((3::Int,3::Int),White) , ((4::Int,4::Int),White), ((3::Int,4::Int),Black), ((4::Int,3::Int),Black) ]
 
 printRow :: Board -> Int -> String
 printRow board no =
@@ -42,7 +43,7 @@ putBoard board = putStr $ fancyShow board
 --a "nothing" means the cell doesn't exist
 
 findCell :: Board -> (Int, Int) -> Maybe Cell
-findCell cells (x,y) = let poss = [((a,b), status) | ((a,b), status) <- cells, (a == x) && (b == y)]
+findCell cells (x,y) = let poss = [ ((a,b), status) | ((a,b), status) <- cells, (a == x) && (b == y)]
                        in if null poss then Nothing else Just $ head poss
 
 
@@ -54,27 +55,29 @@ getAdjacentCells cells ((x,y), status) = let validDirections = [(a,b) | (a,b) <-
                                          in [((findCell cells (a+x,b+y)), (a,b)) | (a,b) <- validDirections]
 
 
+testBoard = [((0::Int,1::Int), White), ((0::Int,2::Int), White),((0::Int, 3::Int), Black)]
 --returns a row of cells of the non-turn color which ends in a cell of the turn color,
 --not including the cell of the turn color. returns Nothing if the row does not
 --end in a cell of the turn color (ie the board ends first, or it runs into empty cell first)
 getRow :: Game -> Cell -> Direction -> Maybe [Cell]
-getRow (board, turn) cell dir = let possNext = getNext board cell dir
-                                    aux = getRowAux (board, turn) possNext dir
-                                in if any isNothing aux then Nothing else Just (map fromJust aux)
+getRow (board, turn) ((x,y), player) (a,b) = let loc = (x+a, y+b)
+                                             in getRowAux (board, turn) loc (a,b)
 
 
-getRowAux :: Game -> Maybe Cell -> Direction -> [Maybe Cell]
-getRowAux board Nothing (a,b) =[ Nothing] --ran into an empty cell
-getRowAux (board, turn) (Just (loc,player)) dir= if player == turn then [] --row ends in cell of the turn color
-                                                  else if overruns board (loc,player) dir then [Nothing] -- the board ends
-                                                  else ((Just (loc,player)):(getRowAux (board,turn) (getNext board (loc,player) dir) loc))
+getRowAux :: Game -> Location -> Direction -> Maybe [Cell]
+getRowAux (board, turn) (x,y) (a,b) = let newCell = lookup (x, y) board
+                                          nextCell =  lookup (x+a, y+b) board
+                                          restOfRow = getRowAux (board, turn) (x+a,y+b) (a,b)
+                                      in if newCell == (Just turn) then Just []
+                                         else if (newCell == Nothing)  || (restOfRow == Nothing) then Nothing
+                                         else let player = fromJust newCell
+                                              in Just (((x,y),player):(fromJust restOfRow))
+
+
 
 --returns next cell in a given direction, or nothing if the board ends
 getNext :: Board -> Cell -> Direction -> Maybe Cell
 getNext board ((x,y), player) (a,b) = findCell board (x+a, y+b)
-
-overruns :: Board -> Cell -> Direction -> Bool
-overruns board ((x,y), player) (a,b) = (x+a) > 7 || (y+b) > 7
 
 otherPlayer :: Player -> Player
 otherPlayer White = Black
@@ -247,7 +250,7 @@ countPieces player cellList = length $ filter (\(location, status) -> status == 
 
 
 
-testBoard = [((0::Int,0::Int), Black), ((0::Int,1::Int), Black)]
+
 testBoardFull = testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++
                 testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++
                 testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++ testBoard ++
