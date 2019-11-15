@@ -2,6 +2,7 @@ import Data.Char
 import Data.List
 import Debug.Trace
 import Data.Maybe
+import System.IO
 
 data Player = Black | White deriving (Show, Eq)
 
@@ -201,6 +202,35 @@ countPieces :: Player -> Board -> Int
 --It does this by filtering the list of cells in the Board down to only those that
 --we would like to count, then taking the length of that list.
 countPieces player cellList = length $ filter (\(location, status) -> status == player) cellList
+
+--
+-- #     # ####### #     #         #     # #######    ###         #  #######     
+-- ##    # #     # #  #  #         #  #  # #           #         #   #     #     
+-- # #   # #     # #  #  #         #  #  # #           #        #    #     #     
+-- #  #  # #     # #  #  #         #  #  # #####       #       #     #     #     
+-- #   # # #     # #  #  #  ###    #  #  # #           #      #      #     #  
+-- #    ## #     # #  #  #  ###    #  #  # #           #     #       #     #  ## 
+-- #     # #######  ## ##    #      ## ##  #######    ###   #        #######  ## 
+--                          #                                                 
+
+cellString :: Cell -> String
+cellString ((x, y), color) = sX ++ sY ++ sColor
+   where
+    sX = show x ++ " "
+    sY = show y ++ " "
+    sColor = if color == Black then "B " else "W "
+
+
+
+gameToString :: Game -> String
+gameToString game@(board, turn) = 
+    show turn ++ "\n" ++ (concat $ [cellString cell | cell <- board])
+
+
+printToFile :: Game -> String -> IO ()
+printToFile gameState filePath = do 
+    writeFile filePath (gameToString game)
+    
 
 
 
