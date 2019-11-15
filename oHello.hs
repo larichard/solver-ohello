@@ -204,30 +204,33 @@ countPieces player (cellList,turn) = length $ filter (\(location, status) -> sta
 
 
 
--- #     # ####### #     #         #     # #######     #####  ####### #       #     # #######
--- ##    # #     # #  #  #         #  #  # #          #     # #     # #       #     # #
--- # #   # #     # #  #  #         #  #  # #          #       #     # #       #     # #
--- #  #  # #     # #  #  #         #  #  # #####       #####  #     # #       #     # #####
--- #   # # #     # #  #  #  ###    #  #  # #                # #     # #        #   #  #
--- #    ## #     # #  #  #  ###    #  #  # #          #     # #     # #         # #   #        ##
--- #     # #######  ## ##    #      ## ##  #######     #####  ####### #######    #    #######  ##
---                          #
+--  _   _  ______          __ __          ________          _____  ____ _ __      ________
+-- | \ | |/ __ \ \        / / \ \        / /  ____|       / ____|/ __ \| |\ \    / /  ____|
+-- |  \| | |  | \ \  /\  / /   \ \  /\  / /| |__         | (___ | |  | | | \ \  / /| |__
+-- | . ` | |  | |\ \/  \/ /     \ \/  \/ / |  __|         \___ \| |  | | |  \ \/ / |  __|
+-- | |\  | |__| | \  /\  / _     \  /\  /  | |____        ____) | |__| | |___\  /  | |____ _
+-- |_| \_|\____/   \/  \/ ( )     \/  \/   |______|      |_____/ \____/|______\/   |______(_)
+--                       |/
+
 
 --returns the best next play for the player whose turn it is
-bestFromValids :: Game-> Maybe Cell
-bestFromValids game@(cells, turn) =
+bestMove :: Game-> Maybe Cell
+bestMove game@(cells, turn) =
                           let valids = validMoves game turn
                               moveVals = getMoveVals game valids
-                              do nextMove <- bestFromValids game alids
                           in case valids of
-                            [] -> Nothing
-                            Just v -> bestFromValids game
+                             [] -> Nothing
+                             Just v -> bestMove game
 
 getMoveVals :: Game -> [Cell] -> [(Int, Cell)]
 getMoveVals game [] = 0
 getMoveVals game@(cells, turn) (m:oves) = let newGame = updateBoard m game
                                               cellCount = countPieces turn game
                                           in ((cellCount, m):(getMoveVals game oves))
+
+checkChanges :: Game -> Game -> Int
+checkChanges [] [] = 0
+checkChanges ((a:as), turn1) ((b:bs), turn2) = if a==b then 1 + checkChanges (as, turn1) (bs, turn2) else checkChanges (as, turn1) (bs, turn2)
 
 allPossibleBoards :: Game -> [Game]
 allPossibleBoards (board, turn) = [updateBoard board (cell, turn) | cell <- validMoves board]
