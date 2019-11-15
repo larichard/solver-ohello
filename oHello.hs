@@ -1,6 +1,8 @@
 import Data.Char
 import Data.List
+import Debug.Trace
 import Data.Maybe
+import System.IO
 
 data Player = Black | White deriving (Show, Eq)
 data Outcome = Tie | Full Player deriving (Show)
@@ -12,6 +14,9 @@ type Game = (Board, Player)
 type Move = (Location, Player)
 type Direction = (Int, Int)
 
+data BST a = Empty | Node a (BST a) (BST a) deriving Show
+
+
 numRC = [0..7]
 
 allLocs = [(x,y) | x <- numRC, y <- numRC]
@@ -19,20 +24,14 @@ allLocs = [(x,y) | x <- numRC, y <- numRC]
 allDirections = [(1,0),(1,1),(1,-1),(0,1),(0,-1),(-1,0),(-1,1),(-1,-1)]
 
 showPiece :: Maybe Cell -> String
-showPiece (Just (loc, player)) = showPlayer player
+showPiece (Just (loc, Black)) = "| B |"
+showPiece (Just (loc, White)) = "| W |"
 showPiece Nothing = "|   |"
 
-showPlayer :: Player -> String
-showPlayer Black = "| B |"
-showPlayer White = "| W |"
-
-initialBoard = [ ((3,3),White) , ((4,4),White), ((3,4),Black), ((4,3),Black) ]
+initialBoard = [ ((3::Int,3::Int),White) , ((4::Int,4::Int),White), ((3::Int,4::Int),Black), ((4::Int,3::Int),Black) ]
 
 printRow :: Board -> Int -> String
-printRow board no =
-             let locs = [ (x,y) | ((x,y),player) <- board]
-             in concat [ if (a,b) `elem` locs then showPiece (findCell board (a,b))
-                  else showPiece Nothing | (a,b) <- allLocs, a==no]
+printRow board no = concat [ showPiece (containsCell board (a,b)) | (a,b) <- allLocs, a==no]
 
 fancyShow :: Board -> String
 fancyShow board=  unlines [printRow board num | num <- numRC]
@@ -41,8 +40,14 @@ putBoard :: Board -> IO()
 putBoard board = putStr $ fancyShow board
 --a "nothing" means the cell doesn't exist
 
+containsCell :: Board -> (Int, Int) -> Maybe Cell 
+containsCell cells (x,y) = let poss = [((a,b), status) | ((a,b), status) <- cells, (a == x) && (b == y)] 
+                       in if null poss then Nothing else Just $ head poss
+
+
+
 findCell :: Board -> (Int, Int) -> Maybe Cell
-findCell cells (x,y) = let poss = [((a,b), status) | ((a,b), status) <- cells, (a == x) && (b == y)]
+findCell cells (x,y) = let poss = [ ((a,b), status) | ((a,b), status) <- cells, (a == x) && (b == y)]
                        in if null poss then Nothing else Just $ head poss
 
 
@@ -54,27 +59,30 @@ getAdjacentCells cells ((x,y), status) = let validDirections = [(a,b) | (a,b) <-
                                          in [((findCell cells (a+x,b+y)), (a,b)) | (a,b) <- validDirections]
 
 
+testBoard = [((0::Int,1::Int), White), ((0::Int,2::Int), White), ((0::Int, 3::Int), White), ((0::Int, 4::Int), Black)]
 --returns a row of cells of the non-turn color which ends in a cell of the turn color,
 --not including the cell of the turn color. returns Nothing if the row does not
 --end in a cell of the turn color (ie the board ends first, or it runs into empty cell first)
-getRow :: Game -> Cell -> Direction -> Maybe [Cell]
-getRow (board, turn) cell dir = let possNext = getNext board cell dir
-                                    aux = getRowAux (board, turn) possNext dir
-                                in if any isNothing aux then Nothing else Just (map fromJust aux)
+getRow :: Game -> Cell -> Direction -> [Cell]
+getRow (board, turn) ((x,y), player) (a,b) = let loc = (x+a, y+b)
+                                             in fromMaybe [] $ getRowAux (board, turn) loc (a,b)
 
 
-getRowAux :: Game -> Maybe Cell -> Direction -> [Maybe Cell]
-getRowAux board Nothing (a,b) =[ Nothing] --ran into an empty cell
-getRowAux (board, turn) (Just (loc,player)) dir= if player == turn then [] --row ends in cell of the turn color
-                                                  else if overruns board (loc,player) dir then [Nothing] -- the board ends
-                                                  else ((Just (loc,player)):(getRowAux (board,turn) (getNext board (loc,player) dir) loc))
+getRowAux :: Game -> Location -> Direction -> Maybe [Cell]
+getRowAux (board, turn) (x,y) (a,b) = let newCell = lookup (x, y) board
+                                          restOfRow = getRowAux (board, turn) (x+a,y+b) (a,b)
+                                      in case newCell of
+                                             Nothing -> Nothing
+                                             Just pl -> if pl == turn
+                                                        then Just [] 
+                                                        else fmap (((x,y),pl):) restOfRow
+
+
+
 
 --returns next cell in a given direction, or nothing if the board ends
 getNext :: Board -> Cell -> Direction -> Maybe Cell
 getNext board ((x,y), player) (a,b) = findCell board (x+a, y+b)
-
-overruns :: Board -> Cell -> Direction -> Bool
-overruns board ((x,y), player) (a,b) = (x+a) > 7 || (y+b) > 7
 
 otherPlayer :: Player -> Player
 otherPlayer White = Black
@@ -82,28 +90,6 @@ otherPlayer Black = White
 
 checkValid :: Board -> Cell -> Bool
 checkValid = undefined
-
---checks if game is over
---game is over when both players cannot make a move, or board is full
---true means game is over
-{-
-gameOver :: Board -> Bool
-gameOver board =
-    --undefined
-    --option 1: check valid moves available for each player using makeMove or validMoves
-    --if only nothings then true else false
-    let --all = validMovesAll board
-        allWhite = [updateBoard (x, White) board | x <- allLocs]
-        allBlack = [updateBoard (x, Black) board | x <- allLocs]
-    in if gameOverAux allBlack && gameOverAux allWhite then True else False
-    --in if gameOverAux all then True else False
-
-gameOverAux :: [Maybe Board] -> Bool
-gameOverAux [] = True
-gameOverAux (x:xs) =
-    let recur = gameOverAux xs
-    in if x == Nothing then recur else False
--}
 
 --if no moves are available, returns a winner
 --if game is not over return nothing
@@ -117,7 +103,6 @@ checkWinner blackCount whiteCount validBlack validWhite =
         else                                   Just (Full White)
       else 
         Nothing
-
 
 --helper function that calculates winner
 --winner is player with most pieces on board
@@ -138,85 +123,36 @@ validMoves :: Player -> Game -> [Location]
 --validMoves Black game = [(0,0)]
 --validMoves White game = []
 validMoves player game = 
-    [x | x <- allLocs, updateBoard (x, player) (fst game) /= Nothing]
+    [x | x <- allLocs, updateBoard (x, player) (game) /= Nothing]
 
 changeCell :: Cell -> Board -> Board
 --overwrites a single cell on the board.
 --VERY DANGEROUS DO NOT CALL WITH POSSIBLY INCORRECT CELLS
-changeCell ((x, y), stat) cellList = ((x, y), stat) : [((xi, yi), stati) | ((xi, yi), stati) <- cellList, (xi, yi) /= (x, y)]
+changeCell (loc, stat) cellList = (loc, stat) : [(loci, stati) | (loci, stati) <- cellList, loci /= loc]
 
 --getRow :: Game -> Cell -> Direction -> Maybe [Cell]
 --getAdjacentCells :: Board -> Cell -> [(Maybe Cell, Direction)]
-updateBoard :: Cell -> Board -> Maybe Game
-updateBoard ((x, y), stat) board =
-    undefined
-    {-
-    let
-        adjs = getAdjacentCells board ((x, y), stat)
-        adjsMinusNothings = [(fromJust possibleCell, dir) | (possibleCell, dir) <- adjs, possibleCell /= Nothing]
-        rowsToBeFlipped = [getRow (board, stat) (fst adj) (snd adj) | adj <- adjsMinusNothings] --[Maybe [Cell]]
-        newBoard = recurRowBoardChange rowsToBeFlipped board
-    in if newBoard == board then Nothing else Just newBoard
-    -}
+updateBoard :: Cell -> Game -> Maybe Game
+updateBoard ((x, y), stat) (board, turn) =
+    let cellsToBeFlipped = concat [getRow (board, stat) ((x, y), stat) dir | dir <- allDirections] --[Maybe [Cell]]
+        newBoard = recurBoardChange cellsToBeFlipped board
+        isValid = (x < 8) && (y < 8) && (x >= 0) && (y >= 0) && ((findCell board (x, y)) == Nothing)
+    in if not (null cellsToBeFlipped) && isValid then Just ((((x, y), stat):newBoard), changePlayer stat) else Nothing
 
 --recurBoardChange gets called by recurRowBoardChange, it's just a pattern-matching recursive function that modifies the board
 --for a single list of cells, with their colors reversed.
-recurBoardChange :: Maybe [Cell] -> Board -> Board
-recurBoardChange (Just []) board = board
-recurBoardChange (Just (cell:s)) board = recurBoardChange (Just s) (changeCell newCell board)
+recurBoardChange :: [Cell] -> Board -> Board
+recurBoardChange [] board = board
+recurBoardChange (cell:s) board = recurBoardChange (s) (changeCell newCell board)
                                where
                                 newCell = (fst cell, changePlayer $ snd cell)
-recurBoardChange Nothing board = board
 
---recurRowBoardChange is called by updateBoard and calls recurBoardChange. This acts as the first layer of some
---two layer recursion.
-recurRowBoardChange :: [Maybe [Cell]] -> Board -> Board
-recurRowBoardChange [] board = board
-recurRowBoardChange (r:ows) board = recurRowBoardChange ows (recurBoardChange r board)
 
--- flipper :: Cell -> Board -> Board
--- flipper startCell cellList = recurBoardChange targetCells cellList
---     where
---         adjs = getAdjacentCells cellList startCell
---         targetCells = flatten [sequence $ flipRow dCell (dx, dy) | (dCell, (dx, dy)) <- adjs]
---                                           --switch to new FlipRow function @ 5
+--recurRowBoard 11/07/19 - 11/14/19, rip
+
 
 
 {-
---if for both players then only useful to check when game is over
---call updateBoard on each cell
-validMovesAll :: Board -> [Maybe Board]
-validMovesAll board =
-    --undefined
-    let allCells = fillEmpty board
-    in [validMovesAllAux x board | x <- allCells]
-
-validMovesAllAux :: Maybe Cell -> Board -> Maybe Board
-validMovesAllAux Nothing board = Nothing
-validMovesAllAux (Just x) board = updateBoard x board
-
---
-lstOfNothings = [Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing] ++
-                [Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing] ++
-                [Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing] ++
-                [Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing] ++
-                [Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing] ++
-                [Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing] ++
-                [Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing] ++
-                [Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing]
-
---list of Nothings and cells
-fillEmpty :: Board -> [Maybe Cell]
-fillEmpty board =
-    fillEmptyAux board lstOfNothings
-
-fillEmptyAux :: Board -> [Maybe Cell] -> [Maybe Cell]
-fillEmptyAux [] lst = lst
-fillEmptyAux (x:xs) lst =
-    let removeHead = tail lst ++ [Just x]
-    in fillEmptyAux xs removeHead
-
-
 --ex input "A1"
 --from A-H, 1-7
 parseString :: String -> Maybe Move
@@ -252,12 +188,63 @@ countPieces :: Player -> Game -> Int
 --we would like to count, then taking the length of that list.
 countPieces player game = length $ filter (\(location, status) -> status == player) (fst game)
 
+--
+-- #     # ####### #     #         #     # #######    ###         #  #######     
+-- ##    # #     # #  #  #         #  #  # #           #         #   #     #     
+-- # #   # #     # #  #  #         #  #  # #           #        #    #     #     
+-- #  #  # #     # #  #  #         #  #  # #####       #       #     #     #     
+-- #   # # #     # #  #  #  ###    #  #  # #           #      #      #     #  
+-- #    ## #     # #  #  #  ###    #  #  # #           #     #       #     #  ## 
+-- #     # #######  ## ##    #      ## ##  #######    ###   #        #######  ## 
+--                          #                                                 
+
+
+--this takes a cell and turns it into a string
+cellString :: Cell -> String
+cellString ((x, y), color) = sX ++ sY ++ sColor ++ "\n"
+   where
+    sX = show x ++ " "
+    sY = show y ++ " "
+    sColor = if color == Black then "B " else "W "
+
+
+--this turns a game into a string
+gameToString :: Game -> String
+gameToString game@(board, turn) = 
+    show turn ++ "\n" ++ (concat $ [cellString cell | cell <- board])
+
+--this takes a game, turns it into a string, and then puts said string into a file of your choosing
+printToFile :: Game -> String -> IO ()
+printToFile gameState filePath = do 
+    writeFile filePath (gameToString gameState)
+{-
+(BLACK OR WHITE) TO REPRESENT CURRENT TURN
+EACH CELL GETS ITS OWN LINE
+FORMAT X Y COLOR
+EXAMPLE:
+3 3 B
+-}
+
+
 
 
 
 testGame = ([((0::Int,0::Int), White), ((0::Int,1::Int), Black)], Black)
-testGameFull = (fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++
-                fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++
-                fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++
-                fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) , Black)
+
+finGame = ([(x, White) | x <- allLocs], White)
+
+-- #     # ####### #     #         #     # #######     #####  ####### #       #     # #######     
+-- ##    # #     # #  #  #         #  #  # #          #     # #     # #       #     # #           
+-- # #   # #     # #  #  #         #  #  # #          #       #     # #       #     # #           
+-- #  #  # #     # #  #  #         #  #  # #####       #####  #     # #       #     # #####       
+-- #   # # #     # #  #  #  ###    #  #  # #                # #     # #        #   #  #         
+-- #    ## #     # #  #  #  ###    #  #  # #          #     # #     # #         # #   #        ## 
+-- #     # #######  ## ##    #      ## ##  #######     #####  ####### #######    #    #######  ## 
+--                          #                                                                     
+
+
+
+-- allPossibleBoards :: Game -> [Game]
+-- allPossibleBoards (board, turn) = [updateBoard board (cell, turn) | cell <- validMoves board]
+
 
