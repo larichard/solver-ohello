@@ -23,20 +23,14 @@ allLocs = [(x,y) | x <- numRC, y <- numRC]
 allDirections = [(1,0),(1,1),(1,-1),(0,1),(0,-1),(-1,0),(-1,1),(-1,-1)]
 
 showPiece :: Maybe Cell -> String
-showPiece (Just (loc, player)) = showPlayer player
+showPiece (Just (loc, Black)) = "| B |"
+showPiece (Just (loc, White)) = "| W |"
 showPiece Nothing = "|   |"
-
-showPlayer :: Player -> String
-showPlayer Black = "| B |"
-showPlayer White = "| W |"
 
 initialBoard = [ ((3::Int,3::Int),White) , ((4::Int,4::Int),White), ((3::Int,4::Int),Black), ((4::Int,3::Int),Black) ]
 
 printRow :: Board -> Int -> String
-printRow board no =
-             let locs = [ (x,y) | ((x,y),player) <- board]
-             in concat [ if (a,b) `elem` locs then showPiece (findCell board (a,b))
-                  else showPiece Nothing | (a,b) <- allLocs, a==no]
+printRow board no = concat [ showPiece (containsCell board (a,b)) | (a,b) <- allLocs, a==no]
 
 fancyShow :: Board -> String
 fancyShow board=  unlines [printRow board num | num <- numRC]
@@ -44,6 +38,12 @@ fancyShow board=  unlines [printRow board num | num <- numRC]
 putBoard :: Board -> IO()
 putBoard board = putStr $ fancyShow board
 --a "nothing" means the cell doesn't exist
+
+containsCell :: Board -> (Int, Int) -> Maybe Cell 
+containsCell cells (x,y) = let poss = [((a,b), status) | ((a,b), status) <- cells, (a == x) && (b == y)] 
+                       in if null poss then Nothing else Just $ head poss
+
+
 
 findCell :: Board -> (Int, Int) -> Maybe Cell
 findCell cells (x,y) = let poss = [ ((a,b), status) | ((a,b), status) <- cells, (a == x) && (b == y)]
