@@ -120,23 +120,20 @@ checkValid = undefined
 --board = [(location, player)]
 winnerIs :: Board -> Maybe Player
 winnerIs board =
-    let
-        lstOfCells = board
-        lstOfColors = [colors | (loc, colors) <- lstOfCells]
-        count = winnerIsAux lstOfColors
-    in if count == 0 then Nothing else blackOrWhite count
+    let numBlack = countPieces Black game
+        numWhite = countPieces White game
+        
+        validMovesWhite = validMoves White game
+        validMovesBlack = validMoves Black game        
 
-    where
-        blackOrWhite count =
-            if count > 0 then Just Black
-            else Just White
+    in checkWinner numBlack numWhite validMovesBlack validMovesWhite
 
-        --black += 1, white -= 1
-        winnerIsAux :: [Player] -> Int
-        winnerIsAux [] = 0
-        winnerIsAux (x:xs) =
-            let recur = winnerIsAux xs
-            in if x == Black then 1 + recur else (-1) + recur
+validMoves :: Player -> Game -> [Location]
+--validMoves Black game = [(0,0)]
+--validMoves White game = []
+validMoves player game = 
+    [x | x <- allLocs, updateBoard (x, player) (game) /= Nothing]
+
 
 changeCell :: Cell -> Board -> Board
 --overwrites a single cell on the board.
@@ -149,7 +146,7 @@ updateBoard :: Cell -> Game -> Maybe Game
 updateBoard ((x, y), stat) (board, turn) =
     let cellsToBeFlipped = concat [getRow (board, stat) ((x, y), stat) dir | dir <- allDirections] --[Maybe [Cell]]
         newBoard = recurBoardChange cellsToBeFlipped board
-        isValid = (x < 8) && (y < 8) && (x <= 0) && (y <= 0) && ((findCell board (x, y)) == Nothing)
+        isValid = (x < 8) && (y < 8) && (x >= 0) && (y >= 0) && ((findCell board (x, y)) == Nothing)
     in if not (null cellsToBeFlipped) && isValid then Just ((((x, y), stat):newBoard), changePlayer stat) else Nothing
 
 
