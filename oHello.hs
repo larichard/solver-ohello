@@ -216,7 +216,7 @@ countPieces player cellList = length $ filter (\(location, status) -> status == 
 
 --this takes a cell and turns it into a string
 cellString :: Cell -> String
-cellString ((x, y), color) = sX ++ sY ++ sColor
+cellString ((x, y), color) = sX ++ sY ++ sColor ++ "\n"
    where
     sX = show x ++ " "
     sY = show y ++ " "
@@ -232,7 +232,13 @@ gameToString game@(board, turn) =
 printToFile :: Game -> String -> IO ()
 printToFile gameState filePath = do 
     writeFile filePath (gameToString gameState)
-    
+{-
+(BLACK OR WHITE) TO REPRESENT CURRENT TURN
+EACH CELL GETS ITS OWN LINE
+FORMAT X Y COLOR
+EXAMPLE:
+3 3 B
+-}
 
 
 
