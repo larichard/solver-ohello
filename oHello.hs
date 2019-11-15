@@ -4,6 +4,7 @@ import Debug.Trace
 import Data.Maybe
 
 data Player = Black | White deriving (Show, Eq)
+data Outcome = Tie | Full Player deriving (Show)
 
 type Location = (Int, Int)
 type Cell = (Location, Player) --possible wrong syntax
@@ -11,7 +12,9 @@ type Board = [Cell]
 type Game = (Board, Player)
 type Move = (Location, Player)
 type Direction = (Int, Int)
+
 data BST a = Empty | Node a (BST a) (BST a) deriving Show
+
 
 numRC = [0..7]
 
@@ -90,6 +93,7 @@ checkValid = undefined
 --checks if game is over
 --game is over when both players cannot make a move, or board is full
 --true means game is over
+
 -- gameOver :: Board -> Bool
 -- gameOver board =
 --     --undefined
@@ -107,36 +111,39 @@ checkValid = undefined
 --     let recur = gameOverAux xs
 --     in if x == Nothing then recur else False
 
-
---if game is over, returns a winner
---else return nothing
--- checkWinner :: Board -> Maybe Player
--- checkWinner board =
---     let gameStatus = gameOver board
---     in if gameStatus then winnerIs board else Nothing
+--if no moves are available, returns a winner
+--if game is not over return nothing
+checkWinner :: Int -> Int -> [Location] -> [Location] -> Maybe Outcome
+checkWinner blackCount whiteCount validBlack validWhite =
+    let movesAreAvailable = null validBlack && null validWhite 
+    in
+      if movesAreAvailable then
+        if      blackCount == whiteCount  then Just Tie
+        else if blackCount > whiteCount   then Just (Full Black)
+        else                                   Just (Full White)
+      else 
+        Nothing
 
 --helper function that calculates winner
 --winner is player with most pieces on board
 --board = [(location, player)]
-winnerIs :: Board -> Maybe Player
-winnerIs board =
+winnerIs :: Game -> Maybe Outcome
+winnerIs game =
     let
-        lstOfCells = board
-        lstOfColors = [colors | (loc, colors) <- lstOfCells]
-        count = winnerIsAux lstOfColors
-    in if count == 0 then Nothing else blackOrWhite count
+        numBlack = countPieces Black game
+        numWhite = countPieces White game
+        
+        validMovesWhite = validMoves White game
+        validMovesBlack = validMoves Black game        
 
-    where
-        blackOrWhite count =
-            if count > 0 then Just Black
-            else Just White
+    in checkWinner numBlack numWhite validMovesBlack validMovesWhite
 
-        --black += 1, white -= 1
-        winnerIsAux :: [Player] -> Int
-        winnerIsAux [] = 0
-        winnerIsAux (x:xs) =
-            let recur = winnerIsAux xs
-            in if x == Black then 1 + recur else (-1) + recur
+
+validMoves :: Player -> Game -> [Location]
+--validMoves Black game = [(0,0)]
+--validMoves White game = []
+validMoves player game = 
+    [x | x <- allLocs, updateBoard (x, player) (fst game) /= Nothing]
 
 changeCell :: Cell -> Board -> Board
 --overwrites a single cell on the board.
@@ -151,7 +158,6 @@ updateBoard ((x, y), stat) (board, turn) =
         newBoard = recurBoardChange cellsToBeFlipped board
         isValid = (x < 8) && (y < 8) && (x <= 0) && (y <= 0) && ((findCell board (x, y)) == Nothing)
     in if not (null cellsToBeFlipped) && isValid then Just ((((x, y), stat):newBoard), changePlayer stat) else Nothing
-
 
 --recurBoardChange gets called by recurRowBoardChange, it's just a pattern-matching recursive function that modifies the board
 --for a single list of cells, with their colors reversed.
@@ -196,13 +202,21 @@ changePlayer (Black) = White
 changePlayer (White) = Black
 
 
-countPieces :: Player -> Board -> Int
+countPieces :: Player -> Game -> Int
 --countPieces counts the number of pieces on the board belonging to a given player.
 --It does this by filtering the list of cells in the Board down to only those that
 --we would like to count, then taking the length of that list.
-countPieces player cellList = length $ filter (\(location, status) -> status == player) cellList
+countPieces player game = length $ filter (\(location, status) -> status == player) (fst game)
 
 
+
+
+
+testGame = ([((0::Int,0::Int), White), ((0::Int,1::Int), Black)], Black)
+testGameFull = (fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++
+                fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++
+                fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++
+                fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) ++ fst(testGame) , Black)
 
 -- #     # ####### #     #         #     # #######     #####  ####### #       #     # #######     
 -- ##    # #     # #  #  #         #  #  # #          #     # #     # #       #     # #           
@@ -217,4 +231,5 @@ countPieces player cellList = length $ filter (\(location, status) -> status == 
 
 -- allPossibleBoards :: Game -> [Game]
 -- allPossibleBoards (board, turn) = [updateBoard board (cell, turn) | cell <- validMoves board]
+
 
