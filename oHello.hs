@@ -213,6 +213,8 @@ countPieces player cellList = length $ filter (\(location, status) -> status == 
 -- #     # #######  ## ##    #      ## ##  #######    ###   #        #######  ## 
 --                          #                                                 
 
+
+--this takes a cell and turns it into a string
 cellString :: Cell -> String
 cellString ((x, y), color) = sX ++ sY ++ sColor
    where
@@ -221,15 +223,15 @@ cellString ((x, y), color) = sX ++ sY ++ sColor
     sColor = if color == Black then "B " else "W "
 
 
-
+--this turns a game into a string
 gameToString :: Game -> String
 gameToString game@(board, turn) = 
     show turn ++ "\n" ++ (concat $ [cellString cell | cell <- board])
 
-
+--this takes a game, turns it into a string, and then puts said string into a file of your choosing
 printToFile :: Game -> String -> IO ()
 printToFile gameState filePath = do 
-    writeFile filePath (gameToString game)
+    writeFile filePath (gameToString gameState)
     
 
 
