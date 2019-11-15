@@ -2,6 +2,7 @@ import Data.Char
 import Data.List
 import Debug.Trace
 import Data.Maybe
+import System.IO
 
 data Player = Black | White deriving (Show, Eq)
 data Outcome = Tie | Full Player deriving (Show)
@@ -207,6 +208,43 @@ countPieces :: Player -> Game -> Int
 --It does this by filtering the list of cells in the Board down to only those that
 --we would like to count, then taking the length of that list.
 countPieces player game = length $ filter (\(location, status) -> status == player) (fst game)
+
+--
+-- #     # ####### #     #         #     # #######    ###         #  #######     
+-- ##    # #     # #  #  #         #  #  # #           #         #   #     #     
+-- # #   # #     # #  #  #         #  #  # #           #        #    #     #     
+-- #  #  # #     # #  #  #         #  #  # #####       #       #     #     #     
+-- #   # # #     # #  #  #  ###    #  #  # #           #      #      #     #  
+-- #    ## #     # #  #  #  ###    #  #  # #           #     #       #     #  ## 
+-- #     # #######  ## ##    #      ## ##  #######    ###   #        #######  ## 
+--                          #                                                 
+
+
+--this takes a cell and turns it into a string
+cellString :: Cell -> String
+cellString ((x, y), color) = sX ++ sY ++ sColor ++ "\n"
+   where
+    sX = show x ++ " "
+    sY = show y ++ " "
+    sColor = if color == Black then "B " else "W "
+
+
+--this turns a game into a string
+gameToString :: Game -> String
+gameToString game@(board, turn) = 
+    show turn ++ "\n" ++ (concat $ [cellString cell | cell <- board])
+
+--this takes a game, turns it into a string, and then puts said string into a file of your choosing
+printToFile :: Game -> String -> IO ()
+printToFile gameState filePath = do 
+    writeFile filePath (gameToString gameState)
+{-
+(BLACK OR WHITE) TO REPRESENT CURRENT TURN
+EACH CELL GETS ITS OWN LINE
+FORMAT X Y COLOR
+EXAMPLE:
+3 3 B
+-}
 
 
 
