@@ -5,7 +5,7 @@ import Data.Maybe
 import System.IO
 
 data Player = Black | White deriving (Show, Eq)
-data Outcome = Tie | Full Player deriving (Show)
+data Outcome = Tie | Win Player deriving (Show, Eq)
 
 type Location = (Int, Int)
 type Cell = (Location, Player) --possible wrong syntax
@@ -99,8 +99,13 @@ checkWinner blackCount whiteCount validBlack validWhite =
     in
       if movesAreAvailable then
         if      blackCount == whiteCount  then Just Tie
+<<<<<<< HEAD
+        else if blackCount > whiteCount   then Just (Win Black)
+        else                                   Just (Win White)
+=======
         else if blackCount > whiteCount   then Just (Full Black)
         else                                   Just (Full White)
+>>>>>>> 332b49d638c6d60163fd818a6b29f2523ed36e7a
       else
         Nothing
 
@@ -123,7 +128,11 @@ validMoves :: Player -> Game -> [Location]
 --validMoves Black game = [(0,0)]
 --validMoves White game = []
 validMoves player game =
+<<<<<<< HEAD
+    [x | x <- allLocs, updateBoard (x, player) ( game) /= Nothing]
+=======
     [x | x <- allLocs, updateBoard (x, player) game /= Nothing]
+>>>>>>> 332b49d638c6d60163fd818a6b29f2523ed36e7a
 
 changeCell :: Cell -> Board -> Board
 --overwrites a single cell on the board.
@@ -189,6 +198,18 @@ countPieces :: Player -> Game -> Int
 countPieces player game = length $ filter (\(location, status) -> status == player) (fst game)
 
 --
+<<<<<<< HEAD
+--     _   _  _____  _    _     _    _  _____   _____  _____
+--    | \ | ||  _  || |  | |   | |  | ||  ___| |_   _||  _  |
+--   |  \| || | | || |  | |   | |  | || |__     | |  | | | |
+--  | . ` || | | || |/\| |   | |/\| ||  __|    | |  | | | |
+-- | |\  |\ \_/ /\  /\  /_  \  /\  /| |___   _| |_ \ \_/ /_
+-- \_| \_/ \___/  \/  \/( )  \/  \/ \____/   \___/  \___/(_)
+--                     |/
+--
+
+--
+=======
 -- #     # ####### #     #         #     # #######    ###         #  #######
 -- ##    # #     # #  #  #         #  #  # #           #         #   #     #
 -- # #   # #     # #  #  #         #  #  # #           #        #    #     #
@@ -197,6 +218,7 @@ countPieces player game = length $ filter (\(location, status) -> status == play
 -- #    ## #     # #  #  #  ###    #  #  # #           #     #       #     #  ##
 -- #     # #######  ## ##    #      ## ##  #######    ###   #        #######  ##
 --                          #
+>>>>>>> 332b49d638c6d60163fd818a6b29f2523ed36e7a
 
 
 --this takes a cell and turns it into a string
@@ -233,33 +255,58 @@ testGame = ([((0::Int,0::Int), White), ((0::Int,1::Int), Black)], Black)
 
 finGame = ([(x, White) | x <- allLocs], White)
 
---  _   _  ______          __ __          ________          _____  ____ _ __      ________
--- | \ | |/ __ \ \        / / \ \        / /  ____|       / ____|/ __ \| |\ \    / /  ____|
--- |  \| | |  | \ \  /\  / /   \ \  /\  / /| |__         | (___ | |  | | | \ \  / /| |__
--- | . ` | |  | |\ \/  \/ /     \ \/  \/ / |  __|         \___ \| |  | | |  \ \/ / |  __|
--- | |\  | |__| | \  /\  / _     \  /\  /  | |____        ____) | |__| | |___\  /  | |____ _
--- |_| \_|\____/   \/  \/ ( )     \/  \/   |______|      |_____/ \____/|______\/   |______(_)
---                       |/
+--      _   _  ______          __   __           ________          _____  ____ _ __      ________
+--     | \ | |/ __ \ \        / /   \ \        / /  ____|       / ____|/ __ \| |\ \    / /  ____|
+--    |  \| | |  | \ \  /\  / /     \ \  /\  / /| |__         | (___ | |  | | | \ \  / /| |__
+--   | . ` | |  | |\ \/  \/ /       \ \/  \/ / |  __|         \___ \| |  | | |  \ \/ / |  __|
+--  | |\  | |__| | \  /\  / _       \  /\  /  | |____        ____) | |__| | |___\  /  | |____ _
+-- |_| \_|\____/   \/  \/ ( )       \/  \/   |______|      |_____/ \____/|______\/   |______(_)
+--                        |/
+
 
 
 --returns the best next play for the player whose turn it is
-bestMove :: Game-> Maybe Cell
-bestMove game@(cells, turn) =
-                          let valids = validMoves game turn
-                              moveVals = getMoveVals game valids
-                          in case valids of
-                             [] -> Nothing
-                             Just v -> bestMove game
+-- bestMove :: Game-> Cell
+-- bestMove game@(cells, turn) =
+--                           let valids = validMoves turn game
+--                           in case valids of
+--                              [] -> if validMoves (changePlayer turn) (cells, (changePlayer turn)) == [] then
+--                                    else bestMove (cells,(changePlayer turn))
+--                               v -> maximum [bestMove (updateBoard cell game) | cell <- valids]
 
-getMoveVals :: Game -> [Cell] -> [(Int, Cell)]
-getMoveVals game [] = 0
-getMoveVals game@(cells, turn) (m:oves) = let newGame = updateBoard m game
-                                              cellCount = countPieces turn game
-                                          in ((cellCount, m):(getMoveVals game oves))
+bestestMove :: Game -> Cell
+bestestMove game@(cells, turn) =
+  let valids = validMoves turn game
+      outcomes = [((c,turn) , getOutcomes (c, turn) game) | c <- valids]
+  in ranker outcomes
 
-checkChanges :: Game -> Game -> Int
-checkChanges [] [] = 0
-checkChanges ((a:as), turn1) ((b:bs), turn2) = if a==b then 1 + checkChanges (as, turn1) (bs, turn2) else checkChanges (as, turn1) (bs, turn2)
+getOutcomes :: Cell -> Game -> [Outcome]
+getOutcomes cell game@(cells, turn) =
+  let newGame@(newBoard, nextTurn) = fromMaybe ([], (changePlayer turn)) (updateBoard cell game)
+      valids = validMoves nextTurn newGame
+  in if winnerIs newGame == Nothing then concat [getOutcomes (c, turn) newGame | c <- valids]
+     else [fromJust (winnerIs newGame)]
 
-allPossibleBoards :: Game -> [Game]
-allPossibleBoards (board, turn) = [updateBoard board (cell, turn) | cell <- validMoves board]
+ranker :: [(Cell, [Outcome])] -> Cell
+ranker [x] = fst x
+ranker ((cell@(loc,player), outcomes):(cell2, outcomes2):xs)  =
+   if countWins outcomes player >  countWins outcomes2 player then ranker ((cell,outcomes):xs)
+   else ranker ((cell2, outcomes2):xs)
+
+countWins :: [Outcome] -> Player -> Double
+countWins outcomes turn = (sum (map (\outcome -> if outcome == (Win turn) then 1.0 else 0.0) outcomes)) / fromIntegral (length outcomes)
+
+-- getMoveVals :: Game -> [Cell] -> [(Int, Cell)]
+-- getMoveVals game [] = 0
+-- getMoveVals game@(cells, turn) (m:oves) = let newGame = updateBoard m game
+--                                               cellCount = countPieces turn game
+--                                           in ((cellCount, m):(getMoveVals game oves))
+--
+-- checkChanges :: Game -> Game -> Int
+-- checkChanges [] [] = 0
+-- checkChanges [x] [] = 1
+-- checkChanges [] [x] = 1
+-- -- checkChanges ((a:as), turn1) ((b:bs), turn2) = if a==b then 1 + checkChanges (as, turn1) (bs, turn2) else checkChanges (as, turn1) (bs, turn2)
+--
+-- allPossibleBoards :: Game -> [Game]
+-- allPossibleBoards (board, turn) = [updateBoard board (cell, turn) | cell <- validMoves board]
