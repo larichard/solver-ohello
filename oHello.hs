@@ -30,14 +30,14 @@ showPiece Nothing = "|   |"
 
 initialBoard = [ ((3::Int,3::Int),White) , ((4::Int,4::Int),White), ((3::Int,4::Int),Black), ((4::Int,3::Int),Black) ]
 
-printRow :: Board -> Int -> String
-printRow board no = concat [ showPiece (containsCell board (a,b)) | (a,b) <- allLocs, a==no]
+printRow :: Game -> Int -> String
+printRow game@(board,turn) no = concat [ showPiece (containsCell board (a,b)) | (a,b) <- allLocs, a==no]
 
-fancyShow :: Board -> String
-fancyShow board=  unlines [printRow board num | num <- numRC]
+fancyShow :: Game -> String
+fancyShow game@(board,turn)=  unlines [printRow game num | num <- numRC]
 
-putBoard :: Board -> IO()
-putBoard board = putStr $ fancyShow board
+putBoard :: Game -> IO()
+putBoard game@(board,turn) = putStr $ fancyShow game
 --a "nothing" means the cell doesn't exist
 
 containsCell :: Board -> (Int, Int) -> Maybe Cell
@@ -240,9 +240,6 @@ readGame str =
         --hd = head lns
     return (Just (doToLines (tail lns), hd))
 
-
-
-
 doToLines :: [String] -> Board
 doToLines [] = [] 
 doToLines (x:xs) = 
@@ -253,10 +250,6 @@ doToLines (x:xs) =
          cell = if third == "B" then Black else White --if third == "White" then White else ""
          dX = ((read first::Int,read second::Int), cell)
      in (dX:dXs)     
-
---turnToCell :: 
-
-
 
 
 testGame = ([((0::Int,0::Int), White), ((0::Int,1::Int), Black)], Black)
