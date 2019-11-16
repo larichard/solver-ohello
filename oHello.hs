@@ -143,7 +143,7 @@ validMoves :: Player -> Game -> [Location]
 --validMoves Black game = [(0,0)]
 --validMoves White game = []
 validMoves player game = 
-    [x | x <- allLocs, updateBoard (x, player) (fst game) /= Nothing]
+    [x | x <- allLocs, updateBoard (x, player) (game) /= Nothing]
 
 changeCell :: Cell -> Board -> Board
 --overwrites a single cell on the board.
@@ -209,6 +209,31 @@ countPieces :: Player -> Game -> Int
 countPieces player game = length $ filter (\(location, status) -> status == player) (fst game)
 
 
+--read game from file!!
+readGame :: String -> IO (Maybe Game)
+readGame str = 
+     do
+    file <- readFile str
+    let lns = lines file
+        hd = if head lns == "Black" then Black else White--if head lns== "White" then White else Nothing 
+        --hd = head lns
+    return (Just (doToLines (tail lns), hd))
+
+
+
+
+doToLines :: [String] -> Board
+doToLines [] = [] 
+doToLines (x:xs) = 
+     let dXs = doToLines xs
+         first = words x !! 0
+         second = words x !! 1
+         third = words x !! 2
+         cell = if third == "B" then Black else White --if third == "White" then White else ""
+         dX = ((read first::Int,read second::Int), cell)
+     in (dX:dXs)     
+
+--turnToCell :: 
 
 
 
