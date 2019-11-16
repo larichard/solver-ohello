@@ -123,7 +123,7 @@ validMoves :: Player -> Game -> [Location]
 --validMoves Black game = [(0,0)]
 --validMoves White game = []
 validMoves player game =
-    [x | x <- allLocs, updateBoard (x, player) (fst game) /= Nothing]
+    [x | x <- allLocs, updateBoard (x, player) game /= Nothing]
 
 changeCell :: Cell -> Board -> Board
 --overwrites a single cell on the board.
@@ -136,7 +136,7 @@ updateBoard :: Cell -> Game -> Maybe Game
 updateBoard ((x, y), stat) (board, turn) =
     let cellsToBeFlipped = concat [getRow (board, stat) ((x, y), stat) dir | dir <- allDirections] --[Maybe [Cell]]
         newBoard = recurBoardChange cellsToBeFlipped board
-        isValid = (x < 8) && (y < 8) && (x <= 0) && (y <= 0) && ((findCell board (x, y)) == Nothing)
+        isValid = (x < 8) && (y < 8) && (x >= 0) && (y >= 0) && ((findCell board (x, y)) == Nothing)
     in if not (null cellsToBeFlipped) && isValid then Just ((((x, y), stat):newBoard), changePlayer stat) else Nothing
 
 --recurBoardChange gets called by recurRowBoardChange, it's just a pattern-matching recursive function that modifies the board
