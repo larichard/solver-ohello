@@ -99,8 +99,13 @@ checkWinner blackCount whiteCount validBlack validWhite =
     in
       if movesAreAvailable then
         if      blackCount == whiteCount  then Just Tie
+<<<<<<< HEAD
         else if blackCount > whiteCount   then Just (Win Black)
         else                                   Just (Win White)
+=======
+        else if blackCount > whiteCount   then Just (Full Black)
+        else                                   Just (Full White)
+>>>>>>> 332b49d638c6d60163fd818a6b29f2523ed36e7a
       else
         Nothing
 
@@ -123,7 +128,11 @@ validMoves :: Player -> Game -> [Location]
 --validMoves Black game = [(0,0)]
 --validMoves White game = []
 validMoves player game =
+<<<<<<< HEAD
     [x | x <- allLocs, updateBoard (x, player) ( game) /= Nothing]
+=======
+    [x | x <- allLocs, updateBoard (x, player) game /= Nothing]
+>>>>>>> 332b49d638c6d60163fd818a6b29f2523ed36e7a
 
 changeCell :: Cell -> Board -> Board
 --overwrites a single cell on the board.
@@ -189,6 +198,7 @@ countPieces :: Player -> Game -> Int
 countPieces player game = length $ filter (\(location, status) -> status == player) (fst game)
 
 --
+<<<<<<< HEAD
 --     _   _  _____  _    _     _    _  _____   _____  _____
 --    | \ | ||  _  || |  | |   | |  | ||  ___| |_   _||  _  |
 --   |  \| || | | || |  | |   | |  | || |__     | |  | | | |
@@ -199,6 +209,16 @@ countPieces player game = length $ filter (\(location, status) -> status == play
 --
 
 --
+=======
+-- #     # ####### #     #         #     # #######    ###         #  #######
+-- ##    # #     # #  #  #         #  #  # #           #         #   #     #
+-- # #   # #     # #  #  #         #  #  # #           #        #    #     #
+-- #  #  # #     # #  #  #         #  #  # #####       #       #     #     #
+-- #   # # #     # #  #  #  ###    #  #  # #           #      #      #     #
+-- #    ## #     # #  #  #  ###    #  #  # #           #     #       #     #  ##
+-- #     # #######  ## ##    #      ## ##  #######    ###   #        #######  ##
+--                          #
+>>>>>>> 332b49d638c6d60163fd818a6b29f2523ed36e7a
 
 
 --this takes a cell and turns it into a string
