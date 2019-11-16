@@ -3,6 +3,8 @@ import Data.List
 import Debug.Trace
 import Data.Maybe
 import System.IO
+import System.IO.Unsafe
+
 
 data Player = Black | White deriving (Show, Eq)
 data Outcome = Tie | Win Player deriving (Show, Eq)
@@ -281,6 +283,13 @@ finGame = ([(x, White) | x <- allLocs], White)
 --                              [] -> if validMoves (changePlayer turn) (cells, (changePlayer turn)) == [] then
 --                                    else bestMove (cells,(changePlayer turn))
 --                               v -> maximum [bestMove (updateBoard cell game) | cell <- valids]
+
+superSafeIO :: IO (Maybe Game) -> Game
+--this is fine
+superSafeIO dumb = fromJust $ unsafePerformIO dumb
+
+readFileToGame :: String -> Game
+readFileToGame file = superSafeIO $ readGame file
 
 bestestMove :: Game -> Cell
 bestestMove game@(cells, turn) =
