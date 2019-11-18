@@ -4,7 +4,7 @@ import Debug.Trace
 import Data.Maybe
 import System.IO
 import System.IO.Unsafe
-
+import Data.List.Split
 
 data Player = Black | White deriving (Show, Eq)
 data Outcome = Tie | Win Player deriving (Show, Eq)
@@ -162,31 +162,70 @@ recurBoardChange (cell:s) board = recurBoardChange (s) (changeCell newCell board
 
 --recurRowBoard 11/07/19 - 11/14/19, rip
 
+initialGame = (initialBoard, Black)
 
+main :: IO ()
+main = do
+    playGame $ initialGame
+    putStrLn "Game Over"
 
-{-
---ex input "A1"
---from A-H, 1-7
-parseString :: String -> Maybe Move
-parseString str =
-    let
-        column = letterToInt $ head str
-        row = digitToInt (head $ tail str)
-        loc = (column, row)
+makeMove :: Game -> IO (Maybe Game)
+makeMove game@(board, turn) = 
+    do 
+       str <- prompt $ (playerToString turn) ++ " enter a valid move"
+       loc <- parseString str
+       let move = (loc, turn)
+       let newGame = updateBoard move game
+       if newGame == Nothing then makeMove game 
+       else return newGame    
 
-    in Just (loc, White)
+playGame :: Game -> IO String
+playGame game = 
+    if not(null $ validMoves Black game) && not(null $ validMoves White game) then
+      do
+        putBoard game
+        a <- makeMove game
+        playGame $ fromJust a 
+    else return $ yayWinner game
 
-letterToInt :: Char -> Int
-letterToInt 'A' = 0
-letterToInt 'B' = 1
-letterToInt 'C' = 2
-letterToInt 'D' = 3
-letterToInt 'E' = 4
-letterToInt 'F' = 5
-letterToInt 'G' = 6
-letterToInt 'H' = 7
+yayWinner :: Game -> String
+yayWinner game = 
+    let winner = fromJust $ winnerIs game
+    in if winner == Win Black then "Player Black Wins!"
+       else                        "Player White Wins!"
 
--}
+prompt :: String -> IO String
+prompt message = 
+    do putStrLn message
+       a <- getLine
+       let splitted = splitOn "," a
+       let checkSplitted = map validInput splitted
+       if length a /= 3 || False `elem` checkSplitted then prompt message else return a
+
+--ex input "2,4"
+--from row:0-7, column:0-7
+parseString :: String -> IO Location
+parseString str = 
+    do
+       let splitted = splitOn "," str
+       let column = stringToInt $ head splitted
+       let row = stringToInt $ head $ tail splitted
+       let loc = (row , column)
+       return loc
+        
+validStrs = ["0","1","2","3","4","5","6","7"]
+
+validInput :: String -> Bool
+validInput c = 
+    if c `elem` validStrs then True else False
+
+playerToString :: Player -> String
+playerToString White = "Player White" 
+playerToString Black = "Player Black"
+
+stringToInt :: String -> Int
+stringToInt c = 
+    read c :: Int
 
 --help
 changePlayer :: Player -> Player
@@ -266,6 +305,7 @@ doToLines (x:xs) =
 testGame = ([((0::Int,0::Int), White), ((0::Int,1::Int), Black)], Black)
 
 finGame = ([(x, White) | x <- allLocs], White)
+--finGame = fromJust $ updateBoard ((7,5),Black) fiGame
 
 --  _   _  ______          __   __           ________         _____  ____ _ __      ________
 -- | \ | |/ __ \ \        / /   \ \        / /  ____|       / ____|/ __ \| |\ \    / /  ____|
