@@ -251,7 +251,13 @@ countPieces player game = length $ filter (\(location, status) -> status == play
 --
 --
 
-
+customCellShow :: Cell -> String
+customCellShow cell@((x, y), player) = (show x) ++ ", " ++ (show y)
+--the above and below functions are IO actions that print the best move for a given IO(Maybe Game)
+printBestMove :: IO(Maybe Game) -> IO()
+printBestMove ioMaybeGame = do
+    maybeGame <- ioMaybeGame
+    putStrLn $ customCellShow $ bestestMove $ fromJust maybeGame
 
 
 --this takes a cell and turns it into a string
@@ -317,7 +323,7 @@ finGame = ([(x, White) | x <- allLocs], White)
 
 
 
---returns the best next play for the player whose turn it is
+-- returns the best next play for the player whose turn it is
 -- bestMove :: Game-> Cell
 -- bestMove game@(cells, turn) =
 --                           let valids = validMoves turn game
@@ -354,6 +360,8 @@ ranker ((cell@(loc,player), outcomes):(cell2, outcomes2):xs)  =
 
 countWins :: [Outcome] -> Player -> Double
 countWins outcomes turn = (sum (map (\outcome -> if outcome == (Win turn) then 1.0 else 0.0) outcomes)) / fromIntegral (length outcomes)
+
+
 
 -- getMoveVals :: Game -> [Cell] -> [(Int, Cell)]
 -- getMoveVals game [] = 0
