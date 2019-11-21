@@ -1,3 +1,4 @@
+module OHELLO where
 import Data.Char
 import Data.List
 import Debug.Trace
@@ -15,6 +16,8 @@ type Board = [Cell]
 type Game = (Board, Player)
 type Move = (Location, Player)
 type Direction = (Int, Int)
+
+
 
 data BST a = Empty | Node a (BST a) (BST a) deriving Show
 
@@ -164,68 +167,8 @@ recurBoardChange (cell:s) board = recurBoardChange (s) (changeCell newCell board
 
 initialGame = (initialBoard, Black)
 
-main :: IO ()
-main = do
-    playGame $ initialGame
-    putStrLn "Game Over"
 
-makeMove :: Game -> IO (Maybe Game)
-makeMove game@(board, turn) = 
-    do 
-       str <- prompt $ (playerToString turn) ++ " enter a valid move"
-       loc <- parseString str
-       let move = (loc, turn)
-       let newGame = updateBoard move game
-       if newGame == Nothing then makeMove game 
-       else return newGame    
 
-playGame :: Game -> IO String
-playGame game = 
-    if not(null $ validMoves Black game) && not(null $ validMoves White game) then
-      do
-        putBoard game
-        a <- makeMove game
-        playGame $ fromJust a 
-    else return $ yayWinner game
-
-yayWinner :: Game -> String
-yayWinner game = 
-    let winner = fromJust $ winnerIs game
-    in if winner == Win Black then "Player Black Wins!"
-       else                        "Player White Wins!"
-
-prompt :: String -> IO String
-prompt message = 
-    do putStrLn message
-       a <- getLine
-       let splitted = splitOn "," a
-       let checkSplitted = map validInput splitted
-       if length a /= 3 || False `elem` checkSplitted then prompt message else return a
-
---ex input "2,4"
---from row:0-7, column:0-7
-parseString :: String -> IO Location
-parseString str = 
-    do
-       let splitted = splitOn "," str
-       let column = stringToInt $ head splitted
-       let row = stringToInt $ head $ tail splitted
-       let loc = (row , column)
-       return loc
-        
-validStrs = ["0","1","2","3","4","5","6","7"]
-
-validInput :: String -> Bool
-validInput c = 
-    if c `elem` validStrs then True else False
-
-playerToString :: Player -> String
-playerToString White = "Player White" 
-playerToString Black = "Player Black"
-
-stringToInt :: String -> Int
-stringToInt c = 
-    read c :: Int
 
 --help
 changePlayer :: Player -> Player
@@ -251,7 +194,13 @@ countPieces player game = length $ filter (\(location, status) -> status == play
 --
 --
 
-
+customCellShow :: Cell -> String
+customCellShow cell@((x, y), player) = (show x) ++ ", " ++ (show y)
+--the above and below functions are IO actions that print the best move for a given IO(Maybe Game)
+printBestMove :: IO(Maybe Game) -> IO()
+printBestMove ioMaybeGame = do
+    maybeGame <- ioMaybeGame
+    putStrLn $ customCellShow $ bestestMove $ fromJust maybeGame
 
 
 --this takes a cell and turns it into a string
@@ -317,7 +266,7 @@ finGame = ([(x, White) | x <- allLocs], White)
 
 
 
---returns the best next play for the player whose turn it is
+-- returns the best next play for the player whose turn it is
 -- bestMove :: Game-> Cell
 -- bestMove game@(cells, turn) =
 --                           let valids = validMoves turn game
@@ -339,6 +288,26 @@ bestestMove game@(cells, turn) =
       outcomes = [((c,turn) , getOutcomes (c, turn) game) | c <- valids]
   in ranker outcomes
 
+bestMove :: Game -> Int -> Cell
+bestMove game@(cells, turn) d =
+    let valids = validMoves turn game
+        outcomes = [((c,turn) , getDLevel (c, turn) game d) | c <- valids]
+    in ranker outcomes
+
+getDLevel :: Cell -> Game -> Int -> [Outcome]
+getDLevel cell game@(cells, turn) 0 = 
+    if blackCount == whiteCount then  [Tie]
+    else if blackCount > whiteCount then [Win Black]
+    else [Win White]
+    where 
+        blackCount = countPieces Black game
+        whiteCount = countPieces White game
+getDLevel cell game@(cells, turn) d = 
+    let newGame@(newBoard, nextTurn) = fromMaybe ([], (changePlayer turn)) (updateBoard cell game)
+        valids = validMoves nextTurn newGame
+    in if winnerIs newGame == Nothing then concat [getDLevel (c, turn) newGame (d-1) | c <- valids]
+    else [fromJust (winnerIs newGame)]
+
 getOutcomes :: Cell -> Game -> [Outcome]
 getOutcomes cell game@(cells, turn) =
   let newGame@(newBoard, nextTurn) = fromMaybe ([], (changePlayer turn)) (updateBoard cell game)
@@ -354,6 +323,8 @@ ranker ((cell@(loc,player), outcomes):(cell2, outcomes2):xs)  =
 
 countWins :: [Outcome] -> Player -> Double
 countWins outcomes turn = (sum (map (\outcome -> if outcome == (Win turn) then 1.0 else 0.0) outcomes)) / fromIntegral (length outcomes)
+
+
 
 -- getMoveVals :: Game -> [Cell] -> [(Int, Cell)]
 -- getMoveVals game [] = 0
