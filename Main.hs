@@ -1,5 +1,5 @@
 module Main where
-import OHELLO
+import Ohello
 import Data.Char
 import Data.List
 import Debug.Trace
@@ -23,7 +23,33 @@ import Text.Read
 --    |__/   |__/  |__/|______/ \______/       |______/ \______/       |__/     |__/|__/  |__/|______/|__/  \__/      
                                                                                                                    
 --styleguide for main
- -- big money ne                                                                                                                   
+ -- big money ne     
+ 
+main :: IO ()
+main = do
+    args <- getArgs
+    let (flags, inputs, errors) = getOpt Permute options args
+    let verbose = Verbose `elem` flags
+    let depth = getDepth flags
+    let move = getMove flags
+    if (Help `elem` flags) || (not $ null errors)
+        then putStrLn $ usageInfo "Usage: fortunes [options] [file]" options
+    else do
+        let fileName = if null inputs && (Interactive `notElem` flags) then "initialBoard.txt" else head inputs
+                                                                            --TODO:make this
+        game <- readGame fileName
+        if (Interactive `elem` flags) then undefined--interactive stuff
+        else if (Winner `elem` flags)
+            then undefined -- call bestestMove not bestMove
+        else if (move /= Nothing) then undefined--make the move
+        else undefined --regular thing, call bestMove with getDepth flags as the int arg
+ -- main :: IO ()
+ -- main = do
+ --     playGame $ initialGame
+ --     putStrLn "Game Over"
+  
+
+
 data Flag = Help | Winner | Verbose | Interactive | Depth String | Move String deriving (Eq, Show)
 
 options :: [OptDescr Flag]
@@ -37,7 +63,7 @@ options = [ Option ['h'] ["help"]   (NoArg Help)   "Print usage information and 
    
           
 getDepth :: [Flag] -> Int
-getDepth ((Depth s):_) = fromMaybe 5 s
+getDepth ((Depth s):_) = read s
 getDepth (_:flags) = getDepth flags
 getDepth [] = 5
 
@@ -47,35 +73,14 @@ getMove (_:flags) = getMove flags
 getMove [] = Nothing
 
 parseStringNoIO :: String -> Maybe Location
-parseStringNoIO input = loc
+parseStringNoIO input = if check then (Just loc) else Nothing
     where
         splitted = splitOn "," input
         column = stringToInt $ head splitted
         row = stringToInt $ head $ tail splitted
         loc = (row , column)
+        check = (row > 0) && (row < 9) && (column > 0) && (column < 9)
 
-main :: IO ()
-main = do
-    args <- getArgs
-    let (flags, inputs, errors) = getOpt Permute options args
-    let verbose = verbose `elem` flags
-    let depth = getDepth args
-    let move = getMove 
-    if (Help `elem` flags) || (not $ null errors)
-        then putStrLn $ usageInfo "Usage: fortunes [options] [file]" options
-    else do
-        let fileName = if null inputs && (Interactive `notElem` flags) then "intialBoard.txt" else head inputs
-                                                                             --TODO:make this
-        game <- readGame fileName
-        if (Interactive `elem` flags) then --interactive stuff
-        else if (Winner `elem` flags)
-            then undefined -- call bestestMove not bestMove
-        else if move != Nothing then --make the move
-        else undefined --regular thing, call bestMove with getDepth flags as the int arg
--- main :: IO ()
--- main = do
---     playGame $ initialGame
---     putStrLn "Game Over"
 
 makeMove :: Game -> IO (Maybe Game)
 makeMove game@(board, turn) = 
