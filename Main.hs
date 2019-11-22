@@ -7,7 +7,9 @@ import Data.Maybe
 import System.IO
 import System.IO.Unsafe
 import Data.List.Split
-
+import System.Environment
+import System.Console.GetOpt
+import Text.Read
 
 
 
@@ -22,11 +24,58 @@ import Data.List.Split
                                                                                                                    
 --styleguide for main
  -- big money ne                                                                                                                   
-                                                                                                                   
+data Flag = Help | Winner | Verbose | Interactive | Depth String | Move String deriving (Eq, Show)
+
+options :: [OptDescr Flag]
+options = [ Option ['h'] ["help"]   (NoArg Help)   "Print usage information and exit."
+          , Option ['w'] ["winner"] (NoArg Winner) "Tells you the best/winning move."
+          , Option ['d'] ["depth"]  (ReqArg Depth  "<num>") "Prints the best move as a result of a <d> depth search."
+          , Option ['m'] ["move"]   (ReqArg Move "<x, y>") "Makes a move at <x,y>."
+          , Option ['v'] ["verbose"]   (NoArg Verbose) "Outputs both the best move and how good it is."
+          , Option ['i'] ["interactive"]   (NoArg Interactive) "Runs program in interactive mode."
+          ]
+   
+          
+getDepth :: [Flag] -> Int
+getDepth ((Depth s):_) = fromMaybe 5 s
+getDepth (_:flags) = getDepth flags
+getDepth [] = 5
+
+getMove :: [Flag] -> Maybe Location
+getMove ((Move s):_) = parseStringNoIO s
+getMove (_:flags) = getMove flags
+getMove [] = Nothing
+
+parseStringNoIO :: String -> Maybe Location
+parseStringNoIO input = loc
+    where
+        splitted = splitOn "," input
+        column = stringToInt $ head splitted
+        row = stringToInt $ head $ tail splitted
+        loc = (row , column)
+
 main :: IO ()
 main = do
-    playGame $ initialGame
-    putStrLn "Game Over"
+    args <- getArgs
+    let (flags, inputs, errors) = getOpt Permute options args
+    let verbose = verbose `elem` flags
+    let depth = getDepth args
+    let move = getMove 
+    if (Help `elem` flags) || (not $ null errors)
+        then putStrLn $ usageInfo "Usage: fortunes [options] [file]" options
+    else do
+        let fileName = if null inputs && (Interactive `notElem` flags) then "intialBoard.txt" else head inputs
+                                                                             --TODO:make this
+        game <- readGame fileName
+        if (Interactive `elem` flags) then --interactive stuff
+        else if (Winner `elem` flags)
+            then undefined -- call bestestMove not bestMove
+        else if move != Nothing then --make the move
+        else undefined --regular thing, call bestMove with getDepth flags as the int arg
+-- main :: IO ()
+-- main = do
+--     playGame $ initialGame
+--     putStrLn "Game Over"
 
 makeMove :: Game -> IO (Maybe Game)
 makeMove game@(board, turn) = 
@@ -39,13 +88,14 @@ makeMove game@(board, turn) =
         else return newGame    
 
 playGame :: Game -> IO String
-playGame game = 
-    if not(null $ validMoves Black game) && not(null $ validMoves White game) then
-        do
-            putBoard game
+playGame game@(board, turn)= 
+    if not(null $ validMoves turn game)
+    then do putBoard game
             a <- makeMove game
             playGame $ fromJust a 
-    else return $ yayWinner game
+    else if not(null $ validMoves (changePlayer turn) game) 
+         then do playGame (board, changePlayer turn)
+         else return $ yayWinner game
 
 yayWinner :: Game -> String
 yayWinner game = 
