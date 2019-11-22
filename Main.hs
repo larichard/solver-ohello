@@ -36,14 +36,13 @@ main = do
         then putStrLn $ usageInfo "Usage: fortunes [options] [file]" options
     else do
         let fileName = if null inputs && (Interactive `notElem` flags) then "initialBoard.txt" else head inputs
-                                                                            --TODO:make this
         game <- readGame fileName
         if (Interactive `elem` flags) then undefined--interactive stuff
         else if (Winner `elem` flags)
-            then undefined -- call bestestMove not bestMove
-        else if (move /= Nothing) then undefined--make the move
-        else undefined --regular thing, call bestMove with getDepth flags as the int arg
- -- main :: IO ()
+            then if verbose then verbosePrint $ bestestMove game
+                 else printMove $ bestestMove game 
+        else if (move /= Nothing) then undefined --make the move
+        else if verbose then verbosePrint $ bestMove game depth else printMove $ bestMove game depth
  -- main = do
  --     playGame $ initialGame
  --     putStrLn "Game Over"
