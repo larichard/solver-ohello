@@ -1,4 +1,4 @@
-module OHELLO where
+module Ohello where
 import Data.Char
 import Data.List
 import Debug.Trace
