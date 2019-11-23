@@ -43,10 +43,6 @@ main = do
                  else printMove $ bestestMove game
         else if (move /= Nothing) then updateBoard (fromJust move, turn) game
         else if verbose then verbosePrint $ bestMove game depth else printMove $ bestMove game depth
- -- main = do
- --     playGame $ initialGame
- --     putStrLn "Game Over"
-
 
 
 data Flag = Help | Winner | Verbose | Interactive | Depth String | Move String deriving (Eq, Show)
@@ -59,7 +55,6 @@ options = [ Option ['h'] ["help"]   (NoArg Help)   "Print usage information and 
           , Option ['v'] ["verbose"]   (NoArg Verbose) "Outputs both the best move and how good it is."
           , Option ['i'] ["interactive"]   (NoArg Interactive) "Runs program in interactive mode."
           ]
-
 
 getDepth :: [Flag] -> Int
 getDepth ((Depth s):_) = read s
@@ -82,6 +77,34 @@ parseStringNoIO input = if check then (Just loc) else Nothing
         check = (row > 0) && (row < 9) && (column > 0) && (column < 9)
 
 
+main :: IO ()
+main = do
+    args <- getArgs
+    let (flags, inputs, errors) = getOpt Permute options args
+    let verbose = verbose `elem` flags
+    let depth = getDepth args
+    let move = getMove 
+    if (Help `elem` flags) || (not $ null errors)
+        then putStrLn $ usageInfo "Usage: fortunes [options] [file]" options
+    else do
+        let fileName = if null inputs && (Interactive `notElem` flags) then "intialBoard.txt" else head inputs
+                                                                             --TODO:make this
+        game <- readGame fileName
+        if (Interactive `elem` flags) then undefined--interactive stuff
+        else if (Winner `elem` flags)
+            then undefined -- call bestestMove not bestMove
+        else if move != Nothing then undefined--make the move
+        else undefined --regular thing, call bestMove with getDepth flags as the int arg
+{-
+main :: IO ()
+main = do
+    playComputer initialGame 8
+    putStrLn "Game Over"
+-}    
+
+
+
+
 makeMove :: Game -> IO (Maybe Game)
 makeMove game@(board, turn) =
     do
@@ -92,6 +115,13 @@ makeMove game@(board, turn) =
         if newGame == Nothing then makeMove game
         else return newGame
 
+computerMove :: Game -> Int -> IO (Maybe Game)
+computerMove game@(board, turn) depth = 
+    let move = (fst $ bestMove game depth, turn)
+        newGame = updateBoard move game
+    in  if newGame == Nothing then makeMove game
+        else return newGame
+
 playGame :: Game -> IO String
 playGame game@(board, turn)=
     if not(null $ validMoves turn game)
@@ -100,7 +130,23 @@ playGame game@(board, turn)=
             playGame $ fromJust a
     else if not(null $ validMoves (changePlayer turn) game)
          then do playGame (board, changePlayer turn)
+         else putStrLn $ yayWinner game
+
+playComputer :: Game -> Int -> IO String
+playComputer game@(board, turn) depth = 
+    if not(null $ validMoves turn game)
+    then do putBoard game
+            player <- makeMove game
+            putBoard $ fromJust player
+            putStrLn "Computer's Turn"
+            comp <- computerMove (fromJust player) depth
+            playComputer (fromJust comp) depth
+    else if not(null $ validMoves (changePlayer turn) game) 
+         then do playComputer (board, changePlayer turn) depth
          else return $ yayWinner game
+
+compGame = [ ((0::Int,0::Int),Black) , ((0::Int,1::Int),White), ((1::Int,0::Int),White), ((1::Int,1::Int),White) ]
+
 
 yayWinner :: Game -> String
 yayWinner game =
