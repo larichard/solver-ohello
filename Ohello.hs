@@ -14,7 +14,6 @@ type Location = (Int, Int)
 type Cell = (Location, Player) --possible wrong syntax
 type Board = [Cell]
 type Game = (Board, Player)
-type Move = (Location, Player)
 type Direction = (Int, Int)
 
 
@@ -295,14 +294,14 @@ bestMove game@(cells, turn) d =
     in ranker outcomes
 
 getDLevel :: Cell -> Game -> Int -> [Outcome]
-getDLevel cell game@(cells, turn) 0 = 
+getDLevel cell game@(cells, turn) 0 =
     if blackCount == whiteCount then  [Tie]
     else if blackCount > whiteCount then [Win Black]
     else [Win White]
-    where 
+    where
         blackCount = countPieces Black game
         whiteCount = countPieces White game
-getDLevel cell game@(cells, turn) d = 
+getDLevel cell game@(cells, turn) d =
     let newGame@(newBoard, nextTurn) = fromMaybe ([], (changePlayer turn)) (updateBoard cell game)
         valids = validMoves nextTurn newGame
     in if winnerIs newGame == Nothing then concat [getDLevel (c, turn) newGame (d-1) | c <- valids]
