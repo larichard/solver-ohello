@@ -86,15 +86,6 @@ verbosePrint cell game@(board, turn) = do
   let wins = countWins (getOutcomes cell game) turn
   putStrLn $ "This move has a " ++ show wins ++ " chance of winning."
 
-
-{-
-main :: IO ()
-main = do
-    playComputer initialGame 8
-    putStrLn "Game Over"
--}
-
-
 handleMove :: Game -> Cell -> IO ()
 handleMove game@(board, turn) cell  =
     do
@@ -105,7 +96,7 @@ handleMove game@(board, turn) cell  =
 makeMove :: Game -> IO (Maybe Game)
 makeMove game@(board, turn) =
     do
-        str <- prompt $ (playerToString turn) ++ " enter a valid move"
+        str <- prompt $ (playerToString turn) ++ " enter a valid move:"
         loc <- parseString str
         let move = (loc, turn)
         let newGame = updateBoard move game
@@ -133,23 +124,29 @@ playComputer :: Game -> Int -> IO ()
 playComputer game@(board, turn) depth =
     if not(null $ validMoves turn game)
     then do putBoard game
-            player <- makeMove game
-            putBoard $ fromJust player
+            putStrLn $ showCountPieces game
+            playerM <- makeMove game
+            putBoard $ fromJust playerM
             putStrLn "Computer's Turn"
-            comp <- computerMove (fromJust player) depth
-            playComputer (fromJust comp) depth
+            compM <- computerMove (fromJust playerM) depth
+            playComputer (fromJust compM) depth
     else if not(null $ validMoves (changePlayer turn) game)
          then do playComputer (board, changePlayer turn) depth
-         else putStrLn $ yayWinner game
+         else putStrLn $ yayWinner game ++ " " ++ showCountPieces game
 
 compGame = [ ((0::Int,0::Int),Black) , ((0::Int,1::Int),White), ((1::Int,0::Int),White), ((1::Int,1::Int),White) ]
 
+showCountPieces :: Game -> String
+showCountPieces game = 
+    let black = show (countPieces Black game)::String
+        white = show (countPieces White game)::String
+    in "Black Pieces: " ++ black ++ ", White Pieces: " ++ white
 
 yayWinner :: Game -> String
 yayWinner game =
     let winner = fromJust $ winnerIs game
     in if winner == Win Black then "Player Black Wins!"
-    else                        "Player White Wins!"
+       else                        "Computer Wins!"
 
 prompt :: String -> IO String
 prompt message = do putStrLn message
