@@ -13,6 +13,7 @@ import Text.Read
 
 
 
+
 -- /$$$$$$$$ /$$   /$$ /$$$$$$  /$$$$$$        /$$$$$$  /$$$$$$        /$$      /$$  /$$$$$$  /$$$$$$ /$$   /$$
 -- |__  $$__/| $$  | $$|_  $$_/ /$$__  $$      |_  $$_/ /$$__  $$      | $$$    /$$$ /$$__  $$|_  $$_/| $$$ | $$
 --    | $$   | $$  | $$  | $$  | $$  \__/        | $$  | $$  \__/      | $$$$  /$$$$| $$  \ $$  | $$  | $$$$| $$
@@ -126,10 +127,13 @@ playComputer game@(board, turn) depth =
     then do putBoard game
             putStrLn $ showCountPieces game
             playerM <- makeMove game
+            let newGame@(newBoard, newTurn) = fromJust playerM
             putBoard $ fromJust playerM
-            putStrLn "Computer's Turn"
-            compM <- computerMove (fromJust playerM) depth
-            playComputer (fromJust compM) depth
+            if not(null $ validMoves newTurn newGame) then do
+                 putStrLn "Computer's Turn"
+                 compM <- computerMove (fromJust playerM) depth
+                 playComputer (fromJust compM) depth
+            else putStrLn $ yayWinner game ++ " " ++ showCountPieces game
     else if not(null $ validMoves (changePlayer turn) game)
          then do playComputer (board, changePlayer turn) depth
          else putStrLn $ yayWinner game ++ " " ++ showCountPieces game
