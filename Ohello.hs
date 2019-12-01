@@ -14,7 +14,6 @@ type Location = (Int, Int)
 type Cell = (Location, Player) --possible wrong syntax
 type Board = [Cell]
 type Game = (Board, Player)
-type Move = (Location, Player)
 type Direction = (Int, Int)
 
 
@@ -43,15 +42,21 @@ showPiece (Just (loc, White)) = "| W |"
 showPiece Nothing = "|   |"
 
 initialBoard = [ ((3::Int,3::Int),White) , ((4::Int,4::Int),White), ((3::Int,4::Int),Black), ((4::Int,3::Int),Black) ]
-
+showValid = "| - |"
 printRow :: Game -> Int -> String
-printRow game@(board,turn) no = concat [ showPiece (containsCell board (a,b)) | (a,b) <- allLocs, a==no]
+printRow game@(board,turn) a = (show (a + 1)) ++ concat [showCell (a,b) | b <- numRC]
+    where
+        valids = validMoves turn game
+        showCell loc = if loc `elem` valids then showValid else showPiece (containsCell board loc) 
+topRow = " | 1 || 2 || 3 || 4 || 5 || 6 || 7 || 8 |\n"
+
 
 fancyShow :: Game -> String
-fancyShow game@(board,turn)=  unlines [printRow game num | num <- numRC]
+fancyShow game@(board,turn) = topRow ++ unlines [printRow game num | num <- numRC]
 
 putBoard :: Game -> IO()
 putBoard game@(board,turn) = putStr $ fancyShow game
+    
 --a "nothing" means the cell doesn't exist
 
 containsCell :: Board -> (Int, Int) -> Maybe Cell
@@ -295,14 +300,14 @@ bestMove game@(cells, turn) d =
     in ranker outcomes
 
 getDLevel :: Cell -> Game -> Int -> [Outcome]
-getDLevel cell game@(cells, turn) 0 = 
+getDLevel cell game@(cells, turn) 0 =
     if blackCount == whiteCount then  [Tie]
     else if blackCount > whiteCount then [Win Black]
     else [Win White]
-    where 
+    where
         blackCount = countPieces Black game
         whiteCount = countPieces White game
-getDLevel cell game@(cells, turn) d = 
+getDLevel cell game@(cells, turn) d =
     let newGame@(newBoard, nextTurn) = fromMaybe ([], (changePlayer turn)) (updateBoard cell game)
         valids = validMoves nextTurn newGame
     in if winnerIs newGame == Nothing then concat [getDLevel (c, turn) newGame (d-1) | c <- valids]
