@@ -138,3 +138,8 @@ stringToInt :: String -> Int
 stringToInt c = 
     read c :: Int
 
+printMove :: Cell -> IO()
+printMove cell@((x,y),player) = putStrLn $ "(" ++ show(x) ++ "," ++ show(y) ++ ")"
+
+
+
