@@ -6,6 +6,7 @@ import Data.Maybe
 import System.IO
 import System.IO.Unsafe
 import Data.List.Split
+--import System.Console.ANSI
 
 data Player = Black | White deriving (Show, Eq)
 data Outcome = Tie | Win Player deriving (Show, Eq)
@@ -42,21 +43,28 @@ showPiece (Just (loc, White)) = "| W |"
 showPiece Nothing = "|   |"
 
 initialBoard = [ ((3::Int,3::Int),White) , ((4::Int,4::Int),White), ((3::Int,4::Int),Black), ((4::Int,3::Int),Black) ]
+
 showValid = "| - |"
+
 printRow :: Game -> Int -> String
 printRow game@(board,turn) a = (show (a + 1)) ++ concat [showCell (a,b) | b <- numRC]
     where
         valids = validMoves turn game
         showCell loc = if loc `elem` valids then showValid else showPiece (containsCell board loc) 
+
 topRow = " | 1 || 2 || 3 || 4 || 5 || 6 || 7 || 8 |\n"
 
 
 fancyShow :: Game -> String
 fancyShow game@(board,turn) = topRow ++ unlines [printRow game num | num <- numRC]
 
-putBoard :: Game -> IO()
-putBoard game@(board,turn) = putStr $ fancyShow game
-    
+
+
+{-putBoard :: Game -> IO()
+putBoard game@(board,turn) = do 
+                         setSGR [SetColor Foreground Vivid White]
+                         putStr $ fancyShow game
+  -}  
 --a "nothing" means the cell doesn't exist
 
 containsCell :: Board -> (Int, Int) -> Maybe Cell
