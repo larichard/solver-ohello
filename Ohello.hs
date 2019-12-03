@@ -47,7 +47,7 @@ initialBoard = [ ((3::Int,3::Int),White) , ((4::Int,4::Int),White), ((3::Int,4::
 showValid = "| - |"
 
 printRow :: Game -> Int -> String
-printRow game@(board,turn) a = (show (a + 1)) ++ concat [showCell (a,b) | b <- numRC]
+printRow game@(board,turn) a = (show (a + 1)) ++ concat [showCell (a,b)| b <- numRC]
     where
         valids = validMoves turn game
         showCell loc = if loc `elem` valids then showValid else showPiece (containsCell board loc) 
@@ -56,7 +56,7 @@ topRow = " | 1 || 2 || 3 || 4 || 5 || 6 || 7 || 8 |\n"
 
 
 fancyShow :: Game -> String
-fancyShow game@(board,turn) = topRow ++ unlines [printRow game num | num <- numRC]
+fancyShow game@(board,turn) = topRow ++ unlines [printRow game num| num <- numRC]
 
 
 

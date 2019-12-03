@@ -79,12 +79,12 @@ printBoard str = putStrLn str --map putStrLn str
 
 putBoard :: Game -> IO()
 putBoard game@(board,turn) = do
-                         setSGR [SetColor Background Dull Green]
-                         setSGR [SetColor Foreground Vivid System.Console.ANSI.White]
+                        -- setSGR [SetColor Background Dull Green]
+                         setSGR [SetColor Foreground Vivid System.Console.ANSI.Magenta]
                          --putStrLn $ lines (fancyShow game)
                          --putStrLn x | x <- (lines fancyShow game)
                          --printBoard (lines (fancyShow game))
-                         putStr $ unlines (lines(fancyShow game))
+                         putStr $ fancyShow game
                          setSGR [Reset]
 
 parseStringNoIO :: String -> Maybe Location
