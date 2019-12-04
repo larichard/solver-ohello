@@ -97,7 +97,7 @@ parseStringNoIO input = if check then (Just loc) else Nothing
         check = (row > 0) && (row < 9) && (column > 0) && (column < 9)
 
 printMove :: Cell -> IO()
-printMove cell@((x,y), player) = putStrLn $ "(" ++ show x ++ "," ++ show (y) ++ ")"
+printMove cell@((x,y), player) = putStrLn $ "(" ++ show (x + 1) ++ "," ++ show (y + 1) ++ ")"
 
 verbosePrint :: Cell -> Game -> IO()
 verbosePrint cell game@(board, turn) = do
