@@ -10,7 +10,7 @@ import Data.List.Split
 import System.Environment
 import System.Console.GetOpt
 import Text.Read
-
+import System.Console.ANSI
 
 
 
@@ -36,16 +36,22 @@ main = do
     if (Help `elem` flags) || (not $ null errors)
         then putStrLn $ usageInfo "Usage: fortunes [options] [file]" options
     else do
+        --setSGR [SetColor Background Dull White]
+        --setSGR [Reset]
         let fileName = if null inputs then "initialBoard.txt" else head inputs
         ioGame <-readGame fileName
         let game@(board, turn) = if ioGame == Nothing then error "File does not exist :(" else fromJust ioGame
-        if (Interactive `elem` flags) then playComputer game depth
+       
+        if (Interactive `elem` flags) --then do 
+        --setSGR [SetColor Background Dull Green]
+        then playComputer game depth
+        --setSGR [Reset]
         else if (Winner `elem` flags)
             then if verbose then verbosePrint (bestestMove game) game
                  else printMove $ bestestMove game
         else if (move /= Nothing) then handleMove game (fromJust move, turn)
         else if verbose then verbosePrint (bestMove game depth) game  else printMove $ bestMove game depth
-
+       -- setSGR [Reset]
 
 data Flag = Help | Winner | Verbose | Interactive | Depth String | Move String deriving (Eq, Show)
 
@@ -68,6 +74,18 @@ getMove ((Move s):_) = if parseStringNoIO s == Nothing then error "Invalid locat
 getMove (_:flags) = getMove flags
 getMove [] = Nothing
 
+printBoard :: String ->IO()
+printBoard str = putStrLn str --map putStrLn str
+
+putBoard :: Game -> IO()
+putBoard game@(board,turn) = do
+                        -- setSGR [SetColor Background Dull Green]
+                         setSGR [SetColor Foreground Vivid System.Console.ANSI.Magenta]
+                         --putStrLn $ lines (fancyShow game)
+                         --putStrLn x | x <- (lines fancyShow game)
+                         --printBoard (lines (fancyShow game))
+                         putStr $ fancyShow game
+                         setSGR [Reset]
 
 parseStringNoIO :: String -> Maybe Location
 parseStringNoIO input = if check then (Just loc) else Nothing
@@ -92,7 +110,9 @@ handleMove game@(board, turn) cell  =
     do
         let newGame = updateBoard cell game
         if newGame == Nothing then putStrLn "invalid move"
-        else putBoard $ fromJust newGame
+        else do --setSGR [SetColor Background Dull Green]
+                putBoard $ fromJust newGame
+                --setSGR [Reset]
 
 makeMove :: Game -> IO (Maybe Game)
 makeMove game@(board, turn) =
@@ -114,7 +134,9 @@ computerMove game@(board, turn) depth =
 playGame :: Game -> IO String
 playGame game@(board, turn)=
     if not(null $ validMoves turn game)
-    then do putBoard game
+    then do --setSGR [SetColor Background Dull Green]
+            putBoard game
+            --setSGR [Reset]
             a <- makeMove game
             playGame $ fromJust a
     else if not(null $ validMoves (changePlayer turn) game)
@@ -124,12 +146,18 @@ playGame game@(board, turn)=
 playComputer :: Game -> Int -> IO ()
 playComputer game@(board, turn) depth =
     if not(null $ validMoves turn game)
-    then do putBoard game
+    then do --setSGR [SetColor Background Dull Green]
+            putBoard game
+            --setSGR [Reset]
             putStrLn $ showCountPieces game
             playerM <- makeMove game
             let newGame@(newBoard, newTurn) = fromJust playerM
+            --setSGR [SetColor Background Dull Green]
             putBoard $ fromJust playerM
+           -- setSGR [Reset]
             if not(null $ validMoves newTurn newGame) then do
+                 setSGR [Reset]
+                 putStrLn " "
                  putStrLn "Computer's Turn"
                  compM <- computerMove (fromJust playerM) depth
                  playComputer (fromJust compM) depth
@@ -138,18 +166,18 @@ playComputer game@(board, turn) depth =
          then do playComputer (board, changePlayer turn) depth
          else putStrLn $ yayWinner game ++ " " ++ showCountPieces game
 
-compGame = [ ((0::Int,0::Int),Black) , ((0::Int,1::Int),White), ((1::Int,0::Int),White), ((1::Int,1::Int),White) ]
+compGame = [ ((0::Int,0::Int),Ohello.Black) , ((0::Int,1::Int),Ohello.White), ((1::Int,0::Int),Ohello.White), ((1::Int,1::Int),Ohello.White) ]
 
 showCountPieces :: Game -> String
 showCountPieces game = 
-    let black = show (countPieces Black game)::String
-        white = show (countPieces White game)::String
+    let black = show (countPieces Ohello.Black game)::String
+        white = show (countPieces Ohello.White game)::String
     in "Black Pieces: " ++ black ++ ", White Pieces: " ++ white
 
 yayWinner :: Game -> String
 yayWinner game =
     let winner = fromJust $ winnerIs game
-    in if winner == Win Black then "Player Black Wins!"
+    in if winner == Win Ohello.Black then "Player Black Wins!"
        else                        "Computer Wins!"
 
 prompt :: String -> IO String
@@ -176,8 +204,8 @@ validInput :: String -> Bool
 validInput c = c `elem` validStrs
 
 playerToString :: Player -> String
-playerToString White = "Player White"
-playerToString Black = "Player Black"
+playerToString Ohello.White = "Player White"
+playerToString Ohello.Black = "Player Black"
 
 stringToInt :: String -> Int
 stringToInt c =
